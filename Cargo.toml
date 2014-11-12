@@ -1,0 +1,10 @@
+[package]
+
+name = "rust-assimp"
+version = "0.0.1"
+authors = ["juxiliary <juxiliary@gmail.com>"]
+
+[lib]
+
+name = "assimp"
+path = "./src/lib.rs"
