@@ -42,7 +42,6 @@ pub struct MeshKey {
     /// key frame. The referenced anim mesh is evaluated
     /// according to the rules defined in the docs for AnimMesh.
     pub value: c_uint,
-
 }
 
 /// Defines how an animation channel behaves outside the defined time range.
@@ -201,7 +200,6 @@ pub struct Animation {
     /// The node animation channels. Each channel affects a single node.
     /// The array is num_channels in size.
     channels: *mut*mut NodeAnim,
-
 
     /// The number of mesh animation channels. Each channel affects
     /// a single mesh and defines vertex-based animation.

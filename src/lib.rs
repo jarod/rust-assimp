@@ -7,6 +7,11 @@
 
 extern crate libc;
 
+pub use types::{Vector2D, Vector3D, Color3D, Color4D, Matrix3x3, Matrix4x4,
+                Quaternion, Plane, Ray, AiString};
+pub use scene::{Scene, Node};
+pub use mesh::Mesh;
+
 pub mod animation;
 pub mod camera;
 pub mod info;
@@ -19,3 +24,5 @@ pub mod types;
 
 mod util;
 mod import;
+mod export;
+mod fileio;
