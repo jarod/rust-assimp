@@ -7,7 +7,6 @@ before_script:
 install:
   - sudo apt-get update -qq
   - sudo apt-get install libassimp-dev
-  - bundle install --path vendor/bundle
 script:
     - cargo build -v
     - cargo doc -v
