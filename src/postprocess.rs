@@ -2,7 +2,6 @@
 
 #[repr(C, u32)]
 pub enum PostProcessSteps {
-
     /// Calculates the tangents and bitangents for the imported meshes.
     ///
     /// Does nothing if a mesh does not have normals. You might want this post

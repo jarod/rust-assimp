@@ -20,6 +20,7 @@ pub mod scene;
 pub mod texture;
 pub mod types;
 pub mod postprocess;
+pub mod config;
 
 mod util;
 mod import;

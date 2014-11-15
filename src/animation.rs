@@ -149,8 +149,9 @@ impl NodeAnim {
     }
 }
 
-/// Describes vertex-based animations for a single mesh or a group of
-/// meshes. Meshes carry the animation data for each frame in their
+/// Describes vertex-based animations for a single mesh or a group of meshes.
+///
+/// Meshes carry the animation data for each frame in their
 /// Mesh::anim_mesh array. The purpose of MeshAnim is to
 /// define keyframes linking each mesh attachment to a particular
 /// point in time.
@@ -175,8 +176,9 @@ impl MeshAnim {
     }
 }
 
-/// An animation consists of keyframe data for a number of nodes. For
-/// each node affected by the animation a separate series of data is given.
+/// An animation consists of keyframe data for a number of nodes.
+///
+/// For each node affected by the animation a separate series of data is given.
 #[repr(C)]
 pub struct Animation {
     /// The name of the animation. If the modeling package this data was
