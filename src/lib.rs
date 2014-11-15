@@ -2,15 +2,13 @@
 
 #![feature(struct_variant)]
 #![feature(unsafe_destructor)]
-#![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
 extern crate libc;
 
 pub use types::{Vector2D, Vector3D, Color3D, Color4D, Matrix3x3, Matrix4x4,
                 Quaternion, Plane, Ray, AiString};
-pub use scene::{Scene, Node};
-pub use mesh::Mesh;
+pub use scene::{Scene};
 
 pub mod animation;
 pub mod camera;
@@ -21,6 +19,7 @@ pub mod mesh;
 pub mod scene;
 pub mod texture;
 pub mod types;
+pub mod postprocess;
 
 mod util;
 mod import;

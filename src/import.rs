@@ -23,7 +23,6 @@ extern {
     ///
     /// Call this function after you're done with the imported data.
     /// pScene The imported data to release. NULL is a valid value.
-    // ASSIMP_API void aiReleaseImport( const C_STRUCT aiScene* pScene);
     pub fn aiReleaseImport(scene: *const RawScene);
 
     ///  Reads the given file and returns its content.//{{{
@@ -41,15 +40,7 @@ extern {
     ///   #aiPostProcessSteps flags.
     /// @return Pointer to the imported data or NULL if the import failed.
     /// //}}}
-    // ASSIMP_API const C_STRUCT aiScene* aiImportFile( const char* pFile, unsigned int pFlags);
     pub fn aiImportFile(fname: *const c_char, flags: c_uint) -> *const RawScene;
-
-    /// Releases all resources associated with the given import process.
-    ///
-    /// Call this function after you're done with the imported data.
-    /// pScene The imported data to release. NULL is a valid value.
-    // ASSIMP_API void aiReleaseImport( const C_STRUCT aiScene* pScene);
-    // fn aiReleaseImport(scene: *const Scene);
 
     /** Returns the error text of the last failed import process.//{{{
      *

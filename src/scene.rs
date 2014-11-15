@@ -19,7 +19,6 @@ use import;
 /// a transformation relative to its parent and possibly several child nodes.
 /// Simple file formats don't support hierarchical structures - for these formats
 /// the imported scene does consist of only a single root node without children.
-#[deriving(Show)]
 #[repr(C)]
 pub struct Node {
     /// The name of the node.
@@ -58,6 +57,7 @@ pub struct Node {
 }
 
 impl Node {
+    /// Get the parent node. Returns None if this node is the root node.
     pub fn get_parent(&self) -> Option<&Node> {
         if self.parent.is_null() {
             None
@@ -79,20 +79,20 @@ impl Node {
 
 #[deriving(Show)]
 #[repr(C, u32)]
-enum SceneFlags {
+pub enum SceneFlags {
     /// Specifies that the scene data structure that was imported is not complete.
     ///
     /// This flag bypasses some internal validations and allows the import
     /// of animation skeletons, material libraries or camera animation paths
     /// using Assimp. Most applications won't support such data.
-    AI_SCENE_FLAGS_INCOMPLETE = 0x1,
+    SceneFlags_INCOMPLETE = 0x1,
 
     ///  This flag is set by the validation postprocess-step if the validation is
     ///  successful.
     ///
     ///  In a validated scene you can be sure that any cross references in the
     ///  data structure (e.g.  vertex indices) are valid.
-    AI_SCENE_FLAGS_VALIDATED = 0x2,
+    SceneFlags_VALIDATED = 0x2,
 
     /// This flag is set by the validation postprocess-step if the validation is
     /// successful but some issues have been found.
@@ -101,14 +101,14 @@ enum SceneFlags {
     /// by a material or that the bone weights for a vertex don't sum to 1.0 ... .
     /// In most cases you should still be able to use the import. This flag could
     /// be useful for applications which don't capture Assimp's log output.
-    AI_SCENE_FLAGS_VALIDATION_WARNING = 0x4,
+    SceneFlags_VALIDATION_WARNING = 0x4,
 
     /// This flag is currently only set by the aiProcess_JoinIdenticalVertices step.
     ///
     /// It indicates that the vertices of the output meshes aren't in the internal
     /// verbose format anymore. In the verbose format all vertices are unique,
     /// no vertex is ever referenced by more than one face.
-    AI_SCENE_FLAGS_NON_VERBOSE_FORMAT = 0x8,
+    SceneFlags_NON_VERBOSE_FORMAT = 0x8,
 
     /// Denotes pure height-map terrain data.
     ///
@@ -123,13 +123,12 @@ enum SceneFlags {
     /// - fully triangulated data takes extremely much free store and should be
     /// avoided as long as possible (typically you'll do the triangulation when
     /// you actually need to render it).
-    AI_SCENE_FLAGS_TERRAIN = 0x10,
+    SceneFlags_TERRAIN = 0x10,
 }
 
 /// Objects of this class are generally maintained and owned by Assimp, not
 /// by the caller. You shouldn't want to instance it, nor should you ever try to
 /// delete a given scene on your own.
-#[deriving(Show)]
 #[repr(C)]
 pub struct RawScene {
     /// Any combination of the AI_SCENE_FLAGS_XXX flags.
@@ -220,51 +219,116 @@ pub struct Scene<'a> {
     // Note we use this struct to wrap the RawScene so that we
     // can import::aiReleaseImport gets dropped.
     raw_scene: &'a RawScene,
+    /// Any combination of the flags in scene::SceneFlags.
+    ///
+    /// By default this value is 0, no flags are set. Most applications will
+    /// want to reject all scenes with the SceneFlags_INCOMPLETE bit set.
+    pub flags: c_uint,
+
+    /// The number of meshes in the scene.
+    pub num_meshes: c_uint,
+
+    /// The number of materials in the scene.
+    pub num_materials: c_uint,
+
+    /// The number of animations in the scene.
+    pub num_animations: c_uint,
+
+    /// The number of textures embedded into the file
+    pub num_textures: c_uint,
+
+    /// The number of light sources in the scene. Light sources
+    /// are fully optional, in most cases this attribute will be 0
+    pub num_lights: c_uint,
+
+    /// The number of cameras in the scene. Cameras
+    /// are fully optional, in most cases this attribute will be 0
+    pub num_cameras: c_uint,
 }
 
 impl<'a> Scene<'a> {
     pub fn from_file(fname: &str, flags: c_uint) -> Scene {
         // TODO FIXME DONT FORGET, CHECK RESULTS!!!! FIXME TODO
-        let raw_scene = unsafe {
+        let raw = unsafe {
             &*(fname.with_c_str(|s| import::aiImportFile(s, flags) ))
         };
 
         Scene {
-            raw_scene: raw_scene,
+            raw_scene: raw,
+            flags: raw.flags,
+            num_meshes: raw.num_meshes,
+            num_materials: raw.num_materials,
+            num_animations: raw.num_animations,
+            num_textures: raw.num_textures,
+            num_lights: raw.num_lights,
+            num_cameras: raw.num_cameras,
         }
     }
 
+    /// Get the root node of the hierarchy.
+    ///
+    /// There will always be a root node if the import
+    /// was successful (and no special flags have been set).
+    /// Presence of further nodes depends on the format and content
+    /// of the imported file.
     pub fn get_root_node(&self) -> &Node {
         unsafe {
             &*(self.raw_scene.root_node)
         }
     }
 
+    /// Get the array of animations.
+    ///
+    /// All animations imported from the given file are listed here.
     pub fn get_animations(&self) -> &[&Animation] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.animations,
                                   self.raw_scene.num_animations as uint) }
     }
 
+    /// Get the array of meshes.
+    ///
+    /// Use the indices given in the Node structure to access
+    /// this array. If the AI_SCENE_FLAGS_INCOMPLETE flag is not set there
+    /// will always be at least ONE mesh.
     pub fn get_meshes(&self) -> &[&Mesh] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.meshes,
                                   self.raw_scene.num_meshes as uint) }
     }
 
+    /// Get the array of light sources.
+    ///
+    /// All light sources imported from the given file are listed here.  Light
+    /// sources are fully optional, in most cases this array will contain 0.
     pub fn get_lights(&self) -> &[&Light] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.lights,
                                   self.raw_scene.num_lights as uint) }
     }
 
+    /// Get the array of cameras.
+    ///
+    /// All cameras imported from the given file are listed here.
+    /// The first camera in the array (if existing) is the default camera view
+    /// into the scene.
     pub fn get_cameras(&self) -> &[&Camera] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.cameras,
                                   self.raw_scene.num_cameras as uint) }
     }
 
+    /// Get the array of materials.
+    ///
+    /// Use the index given in each Mesh structure to access this
+    /// array. If the SceneFlags_INCOMPLETE flag is not set there will
+    /// always be at least ONE material.
     pub fn get_materials(&self) -> &[&Material] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.materials,
                                   self.raw_scene.num_materials as uint) }
     }
 
+    /// Get the array of embedded textures.
+    ///
+    /// Not many file formats embed their textures into the file.
+    /// An example is Quake's MDL format (which is also used by
+    /// some GameStudio versions)
     pub fn get_textures(&self) -> &[&Texture] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.textures,
                                   self.raw_scene.num_textures as uint) }
@@ -286,7 +350,7 @@ mod test {
         let scene = Scene::from_file("cube.dae", 0);
 
         for node in scene.get_root_node().get_children().iter() {
-            println!("node: {}", node);
+            println!("node: {}", node.name);
         }
         for mesh in scene.get_meshes().iter() {
             println!("mesh.num_vertices: {}", mesh.num_vertices);

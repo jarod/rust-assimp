@@ -320,6 +320,7 @@ pub enum BlendMode {
 /// Typically you'll want to build a matrix of this information. However,
 /// we keep separate scaling/translation/rotation values to make it
 /// easier to process and optimize UV transformations internally.
+#[deriving(Show)]
 #[repr(C, packed)]
 pub struct UVTransform {
     /// Translation on the u and v axes.  The default value is (0, 0).
@@ -386,7 +387,6 @@ pub enum PropertyTypeInfo {
 ///      A temporary property for internal use.
 /// ```
 /// see Material
-#[deriving(Show)]
 #[repr(C)]
 pub struct MaterialProperty {
     /// Specifies the name of the property (key)
@@ -435,7 +435,6 @@ impl MaterialProperty {
 /// member functions of aiMaterial to process material properties, C users
 /// have to stick with the aiMaterialGetXXX family of unbound functions.
 /// The library defines a set of standard keys (AI_MATKEY_XXX).
-#[deriving(Show)]
 #[repr(C)]
 pub struct Material {
     /// List of all material properties loaded. */

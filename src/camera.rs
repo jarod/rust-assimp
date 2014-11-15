@@ -52,13 +52,13 @@ pub struct Camera {
     /// There must be a node in the scenegraph with the same name.
     /// This node specifies the position of the camera in the scene
     /// hierarchy and can be animated.
-    name: AiString,
+    pub name: AiString,
 
     /// Position of the camera relative to the coordinate space
     /// defined by the corresponding node.
     ///
     /// The default value is 0|0|0.
-    position: Vector3D,
+    pub position: Vector3D,
 
     /// 'up' - vector of the camera coordinate system relative to
     /// the coordinate space defined by the corresponding node.
@@ -67,7 +67,7 @@ pub struct Camera {
     /// the cross product of  the up and lookAt vectors.
     /// The default value is 0|1|0. The vector
     /// may be normalized, but it needn't.
-    up: Vector3D,
+    pub up: Vector3D,
 
     /// 'look_at' - vector of the camera coordinate system relative to
     /// the coordinate space defined by the corresponding node.
@@ -75,20 +75,20 @@ pub struct Camera {
     /// This is the viewing direction of the user.
     /// The default value is 0|0|1. The vector
     /// may be normalized, but it needn't.
-    look_at: Vector3D,
+    pub look_at: Vector3D,
 
     /// Half horizontal field of view angle, in radians.
     ///
     /// The field of view angle is the angle between the center
     /// line of the screen and the left or right border.
     /// The default value is 1/4PI.
-    horizontal_fov: c_float,
+    pub horizontal_fov: c_float,
 
     /// Distance of the near clipping plane from the camera.
     ///
     /// The value may not be 0.0 (for arithmetic reasons to prevent
     /// a division through zero). The default value is 0.1.
-    clip_plane_near: c_float,
+    pub clip_plane_near: c_float,
 
     /// Distance of the far clipping plane from the camera.
     ///
@@ -97,7 +97,7 @@ pub struct Camera {
     /// between the near and the far plane should not be too
     /// large (between 1000-10000 should be ok) to avoid floating-point
     /// inaccuracies which could lead to z-fighting.
-    clip_plane_far: c_float,
+    pub clip_plane_far: c_float,
 
     /// Screen aspect ratio.
     ///
@@ -105,5 +105,5 @@ pub struct Camera {
     /// screen. Typical values are 4/3, 1/2 or 1/1. This value is
     /// 0 if the aspect ratio is not defined in the source file.
     /// 0 is also the default value.
-    aspect: c_float,
+    pub aspect: c_float,
 }

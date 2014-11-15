@@ -1,4 +1,4 @@
-//! Basic data types and primitives used by assimp.
+//! Defines basic data types and primitives used by assimp.
 
 use std::str;
 use std::fmt;
@@ -35,19 +35,20 @@ pub enum Return {
 /// Logging to these streams can be enabled with a single call to
 ///  #LogStream::createDefaultStream or #aiAttachPredefinedLogStream(),
 ///  respectively.
-pub enum aiDefaultLogStream {
+#[repr(C)]
+pub enum DefaultLogStream {
     /// Stream the log to a file 
-    aiDefaultLogStream_FILE = 0x1,
+    DefaultLogStream_FILE = 0x1,
 
     /// Stream the log to std::cout 
-    aiDefaultLogStream_STDOUT = 0x2,
+    DefaultLogStream_STDOUT = 0x2,
 
     /// Stream the log to std::cerr 
-    aiDefaultLogStream_STDERR = 0x4,
+    DefaultLogStream_STDERR = 0x4,
 
     /// MSVC only: Stream the log the the debugger
     /// (this relies on OutputDebugString from the Win32 SDK)
-    aiDefaultLogStream_DEBUGGER = 0x8,
+    DefaultLogStream_DEBUGGER = 0x8,
 }
 
 /// Represents a plane in a three-dimensional, euclidean space.
@@ -111,7 +112,7 @@ pub struct MemoryInfo {
 
 /// Represents an UTF-8 string, zero byte terminated.
 ///
-/// The character set of an aiString is explicitly defined to be UTF-8. This
+/// The character set of an AiString is explicitly defined to be UTF-8. This
 /// Unicode transformation was chosen in the belief that most strings in 3d
 /// files are limited to ASCII, thus the character set needed to be strictly
 /// ASCII compatible.
@@ -122,19 +123,15 @@ pub struct MemoryInfo {
 ///
 /// For most applications, it will be absolutely sufficient to interpret the
 /// aiString as ASCII data and work with it as one would work with a plain
-/// char*.  Windows users in need of proper support for i.e asian characters
-/// can use the #MultiByteToWideChar(), #WideCharToMultiByte() WinAPI
-/// functionality to convert the UTF-8 strings to their working character set
-/// (i.e. MBCS, WideChar).
+/// char*.
 ///
-/// We use this representation instead of std::string to be C-compatible. The
-/// (binary) length of such a string is limited to MAXLEN characters
+/// The (binary) length of such a string is limited to MAXLEN characters
 /// (including the the terminating zero).
 #[repr(C, packed)]
 pub struct AiString {
     /// Binary length of the string excluding the terminal 0. This is NOT the
     /// logical length of strings containing UTF-8 multibyte sequences! It's
-    /// the number of bytes from the beginning of the string to its end.*/
+    /// the number of bytes from the beginning of the string to its end.
     length: size_t,
 
     /// String buffer. Size limit is MAXLEN

@@ -83,7 +83,6 @@ pub enum AnimBehaviour {
 /// Duplicate keys don't pass the validation step. Most likely there
 /// will be no negative time values, but they are not forbidden also (so
 /// implementations need to cope with them! )
-#[deriving(Show)]
 #[repr(C)]
 pub struct NodeAnim {
     /// The name of the node affected by this animation. The node
@@ -155,7 +154,6 @@ impl NodeAnim {
 /// Mesh::anim_mesh array. The purpose of MeshAnim is to
 /// define keyframes linking each mesh attachment to a particular
 /// point in time.
-#[deriving(Show)]
 #[repr(C)]
 pub struct MeshAnim {
     /// Name of the mesh to be animated. An empty string is not allowed,
@@ -179,7 +177,6 @@ impl MeshAnim {
 
 /// An animation consists of keyframe data for a number of nodes. For
 /// each node affected by the animation a separate series of data is given.
-#[deriving(Show)]
 #[repr(C)]
 pub struct Animation {
     /// The name of the animation. If the modeling package this data was
