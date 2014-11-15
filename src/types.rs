@@ -3,7 +3,6 @@
 use std::str;
 use std::fmt;
 use libc::{c_float, size_t, c_uchar, c_uint};
-use std::num::{Zero};
 
 /// Maximum dimension for strings, ASSIMP strings are zero terminated.
 const MAXLEN : uint = 1024u;
@@ -28,27 +27,6 @@ pub enum Return {
     /// Indicates that not enough memory was availabe to perform the requested 
     /// operation
     Return_OUTOFMEMORY = -0x3,
-}
-
-/// Enumerates predefined log streaming destinations.
-///
-/// Logging to these streams can be enabled with a single call to
-///  #LogStream::createDefaultStream or #aiAttachPredefinedLogStream(),
-///  respectively.
-#[repr(C)]
-pub enum DefaultLogStream {
-    /// Stream the log to a file 
-    DefaultLogStream_FILE = 0x1,
-
-    /// Stream the log to std::cout 
-    DefaultLogStream_STDOUT = 0x2,
-
-    /// Stream the log to std::cerr 
-    DefaultLogStream_STDERR = 0x4,
-
-    /// MSVC only: Stream the log the the debugger
-    /// (this relies on OutputDebugString from the Win32 SDK)
-    DefaultLogStream_DEBUGGER = 0x8,
 }
 
 /// Represents a plane in a three-dimensional, euclidean space.
@@ -188,13 +166,19 @@ pub struct Color4D {
 }
 
 /// Represents a quaternion.
-#[deriving(Clone, PartialEq, Show, Zero)]
+#[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Quaternion {
     pub w: c_float,
     pub x: c_float,
     pub y: c_float,
     pub z: c_float,
+}
+
+impl Quaternion {
+    fn zero() -> Quaternion {
+        Quaternion { w: 0.0, x: 0.0, y: 0.0, z: 0.0 }
+    }
 }
 
 impl Add<Quaternion, Quaternion> for Quaternion {
@@ -209,7 +193,7 @@ impl Add<Quaternion, Quaternion> for Quaternion {
 
 impl Quaternion {
     fn from_matrix(mat: &Matrix3x3) -> Quaternion {
-        let mut quat: Quaternion = Zero::zero();
+        let mut quat: Quaternion = Quaternion::zero();
         unsafe {
             aiCreateQuaternionFromMatrix(&mut quat, mat);
         }

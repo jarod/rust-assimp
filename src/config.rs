@@ -11,9 +11,7 @@
 // /// #SetImportPropertyFloat,
 // /// #SetImportPropertyString
 
-// use libc::{c_int, c_float};
-
-use mesh::PrimitiveType;
+// use mesh::PrimitiveType;
 use types::AiString;
 
 #[allow(non_camel_case_types)]

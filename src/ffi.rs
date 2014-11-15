@@ -2,46 +2,52 @@
 use scene::{RawScene};
 use libc::{c_char, c_uint, c_float, c_int};
 use types::{AiBool, AiString, MemoryInfo};
-
-
-/// C-API: Represents an opaque set of settings to be used during importing.
-///
-/// * see aiCreatePropertyStore
-/// * see aiReleasePropertyStore
-/// * see aiImportFileExWithProperties
-/// * see aiSetPropertyInteger
-/// * see aiSetPropertyFloat
-/// * see aiSetPropertyString
-#[repr(C)]
-pub struct PropertyStore {
-    sentinel: c_char,
-}
+use fileio::{AiFileIO};
+use importer::{PropertyStore};
+use log::{LogStream, DefaultLogStream};
 
 #[link(name = "assimp")]
 extern {
     ///  Reads the given file and returns its content.
     ///
-    /// If the call succeeds, the imported data is returned in an aiScene structure.
-    /// The data is intended to be read-only, it stays property of the ASSIMP
-    /// library and will be stable until aiReleaseImport() is called. After you're
-    /// done with it, call aiReleaseImport() to free the resources associated with
-    /// this file. If the import fails, NULL is returned instead. Call
-    /// aiGetErrorString() to retrieve a human-readable error text.
-    /// @param pFile Path and filename of the file to be imported,
+    /// If the call succeeds, the imported data is returned in an aiScene
+    /// structure.  The data is intended to be read-only, it stays property of
+    /// the ASSIMP library and will be stable until aiReleaseImport() is
+    /// called. After you're done with it, call aiReleaseImport() to free the
+    /// resources associated with this file. If the import fails, NULL is
+    /// returned instead. Call aiGetErrorString() to retrieve a human-readable
+    /// error text.
+    ///
+    /// # Parameters
+    /// * `pFile` Path and filename of the file to be imported,
     ///   expected to be a null-terminated c-string. NULL is not a valid value.
-    /// @param pFlags Optional post processing steps to be executed after
+    ///
+    /// * `pFlags` Optional post processing steps to be executed after
     ///   a successful import. Provide a bitwise combination of the
     ///   aiPostProcessSteps flags.
-    /// @return Pointer to the imported data or NULL if the import failed.
     ///
+    /// Pointer to the imported data or NULL if the import failed.
     pub fn aiImportFile(fname: *const c_char, flags: c_uint) -> *const RawScene;
+
+    /// Same as #aiImportFileEx, but adds an extra parameter containing importer settings.
+    /// * pProps #aiPropertyStore instance containing import settings.
+    // ASSIMP_API const C_STRUCT aiScene* aiImportFileExWithProperties(
+    //     const char* pFile,
+    //     unsigned int pFlags,
+    //     C_STRUCT aiFileIO* pFS,
+    //     const C_STRUCT aiPropertyStore* pProps);
+    pub fn aiImportFileExWithProperties(fname: *const c_char,
+                                        flags: c_uint,
+                                        fio  : *mut AiFileIO,
+                                        props: *const PropertyStore)
+                                        -> *const RawScene;
 
     /// Returns the error text of the last failed import process.
     ///
     /// @return A textual description of the error that occurred at the last
-    /// import process. NULL if there was no error. There can't be an error if you
-    /// got a non-NULL aiScene from aiImportFile/aiImportFileEx/aiApplyPostProcessing.
-    ///
+    /// import process. NULL if there was no error.
+    /// There can't be an error if you got a non-NULL aiScene from
+    /// aiImportFile/aiImportFileEx/aiApplyPostProcessing.
     pub fn aiGetErrorString() -> *const c_char;
 
 
@@ -119,14 +125,6 @@ extern {
                              flags: c_uint)
                              -> *const RawScene;
 
-    /// Enable verbose logging.
-    ///
-    /// Verbose logging includes debug-related stuff
-    /// and detailed import statistics. This can have severe impact on import
-    /// performance and memory consumption. However, it might be useful to
-    /// find out why a file didn't read correctly.
-    pub fn aiEnableVerboseLogging(enable: AiBool);
-
     /// Releases all resources associated with the given import process.
     ///
     /// Call this function after you're done with the imported data.
@@ -194,22 +192,78 @@ extern {
     pub fn aiSetImportPropertyString(store: *mut PropertyStore,
                                      name: *const c_char,
                                      st: *const AiString);
+
+    /// Enable verbose logging.
+    ///
+    /// Verbose logging includes debug-related stuff
+    /// and detailed import statistics. This can have severe impact on import
+    /// performance and memory consumption. However, it might be useful to
+    /// find out why a file didn't read correctly.
+    pub fn aiEnableVerboseLogging(enable: AiBool);
+
+    /// Get one of the predefine log streams.
+    ///
+    /// This is the quick'n'easy solution to access Assimp's log system.
+    /// Attaching a log stream can slightly reduce Assimp's overall import
+    /// performance.
+    ///
+    /// Usage is rather simple. This example will stream the log to a file,
+    /// named log.txt, and the stdout stream of the process:
+    ///
+    /// ```c
+    ///   struct aiLogStream c;
+    ///   c = aiGetPredefinedLogStream(aiDefaultLogStream_FILE,"log.txt");
+    ///   aiAttachLogStream(&c);
+    ///   c = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
+    ///   aiAttachLogStream(&c);
+    /// ```
+    ///
+    /// # Parameters
+    ///
+    /// * pStreams One of the #aiDefaultLogStream enumerated values.
+    ///
+    /// * `file` Solely for the #aiDefaultLogStream_FILE flag: specifies the
+    ///   file to write to.  Pass NULL for all other flags.
+    ///
+    /// The log stream. callback is set to NULL if something went wrong.
+    // ASSIMP_API C_STRUCT aiLogStream aiGetPredefinedLogStream(
+    //     C_ENUM aiDefaultLogStream pStreams,
+    //     const char* file);
+    pub fn aiGetPredefinedLogStream(stream: DefaultLogStream,
+                                file: *const c_char)
+                                -> LogStream;
+
+    /// Attach a custom log stream to the libraries' logging system.
+    ///
+    /// Attaching a log stream can slightly reduce Assimp's overall import
+    /// performance. Multiple log-streams can be attached.
+    /// @param stream Describes the new log stream.
+    /// @note To ensure proepr destruction of the logging system, you need to manually
+    ///   call aiDetachLogStream() on every single log stream you attach.
+    ///   Alternatively (for the lazy folks) #aiDetachAllLogStreams is provided.
+    ///
+    // ASSIMP_API void aiAttachLogStream( const C_STRUCT aiLogStream* stream);
+    pub fn aiAttachLogStream(stream: *const LogStream);
+
+    /// Detach a custom log stream from the libraries' logging system.
+    ///
+    /// This is the counterpart of #aiAttachPredefinedLogStream.
+    /// If you attached a stream, don't forget to detach it again.
+    ///
+    /// @param stream The log stream to be detached.
+    /// @return AI_SUCCESS if the log stream has been detached successfully.
+    /// @see aiDetachAllLogStreams
+    // ASSIMP_API C_ENUM aiReturn aiDetachLogStream(
+    // const C_STRUCT aiLogStream* stream);
+
+    /// Detach all active log streams from the libraries' logging system.
+    ///
+    /// This ensures that the logging system is terminated properly and all
+    /// resources allocated by it are actually freed. If you attached a stream,
+    /// don't forget to detach it again.
+    // ASSIMP_API void aiDetachAllLogStreams(void);
+    pub fn aiDetachAllLogStreams();
 }
-
-// typedef void (*aiLogStreamCallback)(const char* /* message */, char* /* user */);
-
-// /** C-API: Represents a log stream. A log stream receives all log messages and
-//     *  streams them _somewhere_.
-//     *  @see aiGetPredefinedLogStream
-//     *  @see aiAttachLogStream
-//     *  @see aiDetachLogStream */
-// struct LogStream {
-//     /** callback to be called */
-//     aiLogStreamCallback callback;
-
-//     /** user data to be passed to the callback */
-//     char* user;
-// };
 
 // /** Reads the given file using user-defined I/O functions and returns
 //     *   its content.
@@ -235,70 +289,3 @@ extern {
 //     const char* pFile,
 //     unsigned int pFlags,
 //     C_STRUCT aiFileIO* pFS);
-
-// /** Same as #aiImportFileEx, but adds an extra parameter containing importer settings.
-//     *
-//     * @param pProps #aiPropertyStore instance containing import settings.
-//     * @see aiImportFileEx
-//     */
-// ASSIMP_API const C_STRUCT aiScene* aiImportFileExWithProperties(
-//     const char* pFile,
-//     unsigned int pFlags,
-//     C_STRUCT aiFileIO* pFS,
-//     const C_STRUCT aiPropertyStore* pProps);
-
-// /** Get one of the predefine log streams. This is the quick'n'easy solution to//{{{
-//     *  access Assimp's log system. Attaching a log stream can slightly reduce Assimp's
-//     *  overall import performance.
-//     *
-//     *  Usage is rather simple (this will stream the log to a file, named log.txt, and
-//     *  the stdout stream of the process:
-//     *  @code
-//     *    struct aiLogStream c;
-//     *    c = aiGetPredefinedLogStream(aiDefaultLogStream_FILE,"log.txt");
-//     *    aiAttachLogStream(&c);
-//     *    c = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
-//     *    aiAttachLogStream(&c);
-//     *  @endcode
-//     *
-//     *  @param pStreams One of the #aiDefaultLogStream enumerated values.
-//     *  @param file Solely for the #aiDefaultLogStream_FILE flag: specifies the file to write to.
-//     *    Pass NULL for all other flags.
-//     *  @return The log stream. callback is set to NULL if something went wrong.
-//     */
-// ASSIMP_API C_STRUCT aiLogStream aiGetPredefinedLogStream(
-//     C_ENUM aiDefaultLogStream pStreams,
-//     const char* file);//}}}
-
-// /** Attach a custom log stream to the libraries' logging system.//{{{
-//     *
-//     *  Attaching a log stream can slightly reduce Assimp's overall import
-//     *  performance. Multiple log-streams can be attached.
-//     *  @param stream Describes the new log stream.
-//     *  @note To ensure proepr destruction of the logging system, you need to manually
-//     *    call aiDetachLogStream() on every single log stream you attach.
-//     *    Alternatively (for the lazy folks) #aiDetachAllLogStreams is provided.
-//     */
-// ASSIMP_API void aiAttachLogStream(
-//     const C_STRUCT aiLogStream* stream);//}}}
-
-// /** Detach a custom log stream from the libraries' logging system.//{{{
-//     *
-//     *  This is the counterpart of #aiAttachPredefinedLogStream. If you attached a stream,
-//     *  don't forget to detach it again.
-//     *  @param stream The log stream to be detached.
-//     *  @return AI_SUCCESS if the log stream has been detached successfully.
-//     *  @see aiDetachAllLogStreams
-//     */
-// ASSIMP_API C_ENUM aiReturn aiDetachLogStream(
-//     const C_STRUCT aiLogStream* stream);//}}}
-
-// /** Detach all active log streams from the libraries' logging system.//{{{
-//     *  This ensures that the logging system is terminated properly and all
-//     *  resources allocated by it are actually freed. If you attached a stream,
-//     *  don't forget to detach it again.
-//     *  @see aiAttachLogStream
-//     *  @see aiDetachLogStream
-//     */
-// ASSIMP_API void aiDetachAllLogStreams(void);//}}}
-

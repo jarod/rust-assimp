@@ -11,7 +11,7 @@ use mesh::Mesh;
 use texture::Texture;
 use types::{Matrix4x4, AiString, MemoryInfo};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
-use cimport;
+use ffi;
 
 
 /// A node in the imported hierarchy.
@@ -250,10 +250,14 @@ pub struct Scene<'a> {
 impl<'a> Scene<'a> {
     pub fn from_file(fname: &str, flags: c_uint) -> Scene {
         // TODO FIXME DONT FORGET, CHECK RESULTS!!!! FIXME TODO
-        let raw = unsafe {
-            &*(fname.with_c_str(|s| cimport::aiImportFile(s, flags) ))
-        };
+        unsafe {
+            let raw = fname.with_c_str(|s| ffi::aiImportFile(s, flags) );
+            Scene::from_raw_scene(raw)
+        }
+    }
 
+    pub unsafe fn from_raw_scene(raw: *const RawScene) -> Scene<'a> {
+        let raw = &*raw;
         Scene {
             raw_scene: raw,
             flags: raw.flags,
@@ -336,25 +340,24 @@ impl<'a> Scene<'a> {
     }
 
     pub fn get_memory_info(&self) -> MemoryInfo {
-        let mut mem_info = MemoryInfo {
-                                    textures: 0,
-                                    materials: 0,
-                                    meshes: 0,
-                                    nodes: 0,
-                                    animations: 0,
-                                    cameras: 0,
-                                    lights: 0,
-                                    total: 0
-                                   };
-        unsafe { cimport::aiGetMemoryRequirements(self.raw_scene, &mut mem_info); }
-        mem_info
+        unsafe {
+            let mut mem_info = mem::zeroed();
+            ffi::aiGetMemoryRequirements(self.raw_scene, &mut mem_info);
+            mem_info
+        }
     }
+
+    // pub fn apply_postprocessing(&mut self, flags: c_uint) {
+    // pub fn aiApplyPostProcessing(scene: *mut RawScene,
+    //                         flags: c_uint)
+    //                         -> *const RawScene;
+    // }
 }
 
 #[unsafe_destructor]
 impl<'a> Drop for Scene<'a> {
     fn drop(&mut self) {
-        unsafe { cimport::aiReleaseImport(mem::transmute(self.raw_scene)) }
+        unsafe { ffi::aiReleaseImport(mem::transmute(self.raw_scene)) }
     }
 }
 
