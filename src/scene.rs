@@ -9,9 +9,10 @@ use light::Light;
 use material::Material;
 use mesh::Mesh;
 use texture::Texture;
-use types::{Matrix4x4, AiString};
+use types::{Matrix4x4, AiString, MemoryInfo};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
-use import;
+use cimport;
+
 
 /// A node in the imported hierarchy.
 ///
@@ -217,7 +218,7 @@ pub struct RawScene {
 /// Everything that was imported from the given file can be accessed from here.
 pub struct Scene<'a> {
     // Note we use this struct to wrap the RawScene so that we
-    // can import::aiReleaseImport gets dropped.
+    // can aiReleaseImport gets dropped.
     raw_scene: &'a RawScene,
     /// Any combination of the flags in scene::SceneFlags.
     ///
@@ -250,7 +251,7 @@ impl<'a> Scene<'a> {
     pub fn from_file(fname: &str, flags: c_uint) -> Scene {
         // TODO FIXME DONT FORGET, CHECK RESULTS!!!! FIXME TODO
         let raw = unsafe {
-            &*(fname.with_c_str(|s| import::aiImportFile(s, flags) ))
+            &*(fname.with_c_str(|s| cimport::aiImportFile(s, flags) ))
         };
 
         Scene {
@@ -333,12 +334,27 @@ impl<'a> Scene<'a> {
         unsafe { ptr_ptr_to_slice(self.raw_scene.textures,
                                   self.raw_scene.num_textures as uint) }
     }
+
+    pub fn get_memory_info(&self) -> MemoryInfo {
+        let mut mem_info = MemoryInfo {
+                                    textures: 0,
+                                    materials: 0,
+                                    meshes: 0,
+                                    nodes: 0,
+                                    animations: 0,
+                                    cameras: 0,
+                                    lights: 0,
+                                    total: 0
+                                   };
+        unsafe { cimport::aiGetMemoryRequirements(self.raw_scene, &mut mem_info); }
+        mem_info
+    }
 }
 
 #[unsafe_destructor]
 impl<'a> Drop for Scene<'a> {
     fn drop(&mut self) {
-        unsafe { import::aiReleaseImport(mem::transmute(self.raw_scene)) }
+        unsafe { cimport::aiReleaseImport(mem::transmute(self.raw_scene)) }
     }
 }
 
@@ -348,6 +364,8 @@ mod test {
     #[test]
     fn test_import() {
         let scene = Scene::from_file("cube.dae", 0);
+
+        println!("mem_info {}", scene.get_memory_info());
 
         for node in scene.get_root_node().get_children().iter() {
             println!("node: {}", node.name);

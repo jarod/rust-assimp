@@ -422,6 +422,7 @@ pub enum PostProcessSteps {
 /// conventions: left-handed geometry, upper-left origin for UV coordinates
 /// and finally clockwise face order, suitable for CCW culling.
 #[allow(non_upper_case_globals)]
+#[deprecated]
 pub const Process_ConvertToLeftHanded : u32 =
                             Process_MakeLeftHanded   as u32 |
                             Process_FlipWindingOrder as u32 |

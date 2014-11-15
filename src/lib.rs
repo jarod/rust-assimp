@@ -1,5 +1,6 @@
 //! A binding for Open Asset Import Library (assimp)
 
+#![feature(globs)]
 #![feature(struct_variant)]
 #![feature(unsafe_destructor)]
 #![allow(dead_code)]
@@ -21,8 +22,9 @@ pub mod texture;
 pub mod types;
 pub mod postprocess;
 pub mod config;
+pub mod importer;
 
 mod util;
-mod import;
+mod cimport;
 mod export;
 mod fileio;
