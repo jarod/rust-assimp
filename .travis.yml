@@ -1,0 +1,19 @@
+language: rust
+os:
+    - linux
+env:
+  global:
+    - secure: PxAW4VmIkTPvWxhCbi7zkawaiaBV6I11UVK8s6sCXeqgtZaZGV2tgVehzHnH//G35TJbt0HrmBu5m/NQAUMW5QQCLTDL5qlSerzMCDcrwHEKMuKVXntQQe1mS+zMRokvkMim6BtKyobEbtCgiPi6OIyP1z5tCap4tu575JGq7/E=
+before_script:
+    - rustc -v
+    - cargo -V
+install:
+    - sudo apt-get update -qq
+    - sudo apt-get install libassimp-dev
+script:
+    - cargo build -v
+    - cargo doc -v
+after_success:
+    - cp -R target/doc doc
+    - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+    - rm -r doc
