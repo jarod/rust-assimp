@@ -14,8 +14,19 @@
 // use mesh::PrimitiveType;
 use types::AiString;
 
+// bitflags! {
+//     flags Flags: u32 {
+//         const FLAG_A       = 0x00000001,
+//         const FLAG_B       = 0x00000010,
+//         const FLAG_C       = 0x00000100,
+//         const FLAG_ABC     = FLAG_A.bits
+//                            | FLAG_B.bits
+//                            | FLAG_C.bits,
+//     }
+// }
+
 #[allow(non_camel_case_types)]
-pub enum Config<'a> {
+pub enum ImportProperty<'a> {
     /// Enables time measurements.
     ///
     /// If enabled, measures the time needed for each part of the loading
@@ -466,67 +477,6 @@ pub enum Config<'a> {
     IMPORT_IFC_CUSTOM_TRIANGULATION(bool),
 }
 
-pub enum PropertyType<'a> {
-    Pfloat(f32),
-    Pint(int),
-    Pbool(bool),
-    Pstr(&'a AiString),
-}
-
-pub fn decompose_property(config: Config) -> (&'static str, PropertyType) {
-    match config {
-        GLOB_MEASURE_TIME(a) => ( "GLOB_MEASURE_TIME", Pbool(a) ),
-        PP_SBBC_MAX_BONES(a) => ( "PP_SBBC_MAX_BONES", Pint(a) ),
-        PP_CT_MAX_SMOOTHING_ANGLE(a) => ( "PP_CT_MAX_SMOOTHING_ANGLE", Pfloat(a) ),
-        PP_CT_TEXTURE_CHANNEL_INDEX(a) => ( "PP_CT_TEXTURE_CHANNEL_INDEX", Pint(a) ),
-        PP_GSN_MAX_SMOOTHING_ANGLE(a) => ( "PP_GSN_MAX_SMOOTHING_ANGLE", Pfloat(a) ),
-        IMPORT_MDL_COLORMAP(a) => ( "IMPORT_MDL_COLORMAP", Pstr(a) ),
-        PP_RRM_EXCLUDE_LIST(a) => ( "PP_RRM_EXCLUDE_LIST", Pstr(a) ),
-        PP_PTV_KEEP_HIERARCHY(a) => ( "PP_PTV_KEEP_HIERARCHY", Pbool(a) ),
-        PP_PTV_NORMALIZE(a)  => ( "PP_PTV_NORMALIZE", Pfloat(a) ),
-        PP_FD_REMOVE(a) => ( "PP_FD_REMOVE", Pbool(a) ),
-        PP_OG_EXCLUDE_LIST(a)    => ( "PP_OG_EXCLUDE_LIST", Pstr(a) ),
-        PP_SLM_TRIANGLE_LIMIT(a) => ( "PP_SLM_TRIANGLE_LIMIT", Pint(a) ),
-        PP_SLM_VERTEX_LIMIT(a) => ( "PP_SLM_VERTEX_LIMIT", Pint(a) ),
-        PP_LBW_MAX_WEIGHTS(a) => ( "PP_LBW_MAX_WEIGHTS", Pint(a) ),
-        PP_DB_THRESHOLD(a) => ( "PP_DB_THRESHOLD", Pfloat(a) ),
-        PP_DB_ALL_OR_NONE(a) => ( "PP_DB_ALL_OR_NONE", Pbool(a) ),
-        PP_ICL_PTCACHE_SIZE(a) => ( "PP_ICL_PTCACHE_SIZE", Pint(a) ),
-
-        PP_RVC_FLAGS(a) => ( "PP_RVC_FLAGS", Pint(a) ),
-        PP_SBP_REMOVE(a) => ( "PP_SBP_REMOVE", Pint(a) ),
-        PP_TUV_EVALUATE(a) => ( "PP_TUV_EVALUATE", Pint(a) ),
-
-        PP_FID_ANIM_ACCURACY(a) => ( "PP_FID_ANIM_ACCURACY", Pfloat(a) ),
-        FAVOUR_SPEED(a) => ( "FAVOUR_SPEED", Pbool(a) ),
-        IMPORT_GLOBAL_KEYFRAME(a) => ( "IMPORT_GLOBAL_KEYFRAME", Pint(a) ),
-        IMPORT_MD2_KEYFRAME(a) => ( "IMPORT_MD2_KEYFRAME", Pint(a) ),
-        IMPORT_MD3_KEYFRAME(a) => ( "IMPORT_MD3_KEYFRAME", Pint(a) ),
-        IMPORT_MDC_KEYFRAME(a) => ( "IMPORT_MDC_KEYFRAME", Pint(a) ),
-        IMPORT_MDL_KEYFRAME(a) => ( "IMPORT_MDL_KEYFRAME", Pint(a) ),
-        IMPORT_SMD_KEYFRAME(a) => ( "IMPORT_SMD_KEYFRAME", Pint(a) ),
-        IMPORT_UNREAL_KEYFRAME(a) => ( "IMPORT_UNREAL_KEYFRAME", Pint(a) ),
-        IMPORT_AC_SEPARATE_BFCULL(a) => ( "IMPORT_AC_SEPARATE_BFCULL", Pbool(a) ),
-        IMPORT_AC_EVAL_SUBDIVISION(a) => ( "IMPORT_AC_EVAL_SUBDIVISION", Pbool(a) ),
-        IMPORT_UNREAL_HANDLE_FLAGS(a) => ( "UNREAL_HANDLE_FLAGS", Pbool(a) ),
-        IMPORT_TER_MAKE_UVS(a) => ( "IMPORT_TER_MAKE_UVS", Pbool(a) ),
-        IMPORT_ASE_RECONSTRUCT_NORMALS(a) => ( "IMPORT_ASE_RECONSTRUCT_NORMALS", Pbool(a) ),
-        IMPORT_MD3_HANDLE_MULTIPART(a) => ( "IMPORT_MD3_HANDLE_MULTIPART", Pbool(a) ),
-        IMPORT_MD3_SKIN_NAME(a) => ( "IMPORT_MD3_SKIN_NAME", Pstr(a) ),
-        IMPORT_MD3_SHADER_SRC(a) => ( "IMPORT_MD3_SHADER_SRC", Pstr(a) ),
-        IMPORT_MD5_NO_ANIM_AUTOLOAD(a) => ( "IMPORT_MD5_NO_ANIM_AUTOLOAD", Pbool(a) ),
-        IMPORT_LWO_ONE_LAYER_ONLY(a) => ( "IMPORT_LWO_ONE_LAYER_ONLY", Pint(a) ),
-        IMPORT_LWS_ANIM_START(a) => ( "IMPORT_LWS_ANIM_START", Pint(a) ),
-        IMPORT_LWS_ANIM_END(a) => ( "IMPORT_LWS_ANIM_END", Pint(a) ),
-        IMPORT_IRR_ANIM_FPS(a) => ( "IMPORT_IRR_ANIM_FPS", Pint(a) ),
-        IMPORT_OGRE_MATERIAL_FILE(a) => ( "IMPORT_OGRE_MATERIAL_FILE", Pstr(a) ),
-        IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME(a) => ( "IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME", Pbool(a) ),
-        IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS", Pbool(a) ),
-        IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS", Pbool(a) ),
-        IMPORT_IFC_CUSTOM_TRIANGULATION(a) => ( "IMPORT_IFC_CUSTOM_TRIANGULATION", Pbool(a) ),
-    }
-}
-
 #[repr(C, u32)]
 pub enum TransformUV {
     /// TransformUVCoords evaluates UV scalings
@@ -598,6 +548,67 @@ pub enum Component {
     Component_MATERIALS = 0x800,
 }
 
+pub enum PropertyType<'a> {
+    Pfloat(f32),
+    Pint(int),
+    Pbool(bool),
+    Pstr(&'a AiString),
+}
+
+pub fn decompose_property(config: ImportProperty) -> (&'static str, PropertyType) {
+    match config {
+        GLOB_MEASURE_TIME(a) => ( "GLOB_MEASURE_TIME", Pbool(a) ),
+        PP_SBBC_MAX_BONES(a) => ( "PP_SBBC_MAX_BONES", Pint(a) ),
+        PP_CT_MAX_SMOOTHING_ANGLE(a) => ( "PP_CT_MAX_SMOOTHING_ANGLE", Pfloat(a) ),
+        PP_CT_TEXTURE_CHANNEL_INDEX(a) => ( "PP_CT_TEXTURE_CHANNEL_INDEX", Pint(a) ),
+        PP_GSN_MAX_SMOOTHING_ANGLE(a) => ( "PP_GSN_MAX_SMOOTHING_ANGLE", Pfloat(a) ),
+        IMPORT_MDL_COLORMAP(a) => ( "IMPORT_MDL_COLORMAP", Pstr(a) ),
+        PP_RRM_EXCLUDE_LIST(a) => ( "PP_RRM_EXCLUDE_LIST", Pstr(a) ),
+        PP_PTV_KEEP_HIERARCHY(a) => ( "PP_PTV_KEEP_HIERARCHY", Pbool(a) ),
+        PP_PTV_NORMALIZE(a)  => ( "PP_PTV_NORMALIZE", Pfloat(a) ),
+        PP_FD_REMOVE(a) => ( "PP_FD_REMOVE", Pbool(a) ),
+        PP_OG_EXCLUDE_LIST(a)    => ( "PP_OG_EXCLUDE_LIST", Pstr(a) ),
+        PP_SLM_TRIANGLE_LIMIT(a) => ( "PP_SLM_TRIANGLE_LIMIT", Pint(a) ),
+        PP_SLM_VERTEX_LIMIT(a) => ( "PP_SLM_VERTEX_LIMIT", Pint(a) ),
+        PP_LBW_MAX_WEIGHTS(a) => ( "PP_LBW_MAX_WEIGHTS", Pint(a) ),
+        PP_DB_THRESHOLD(a) => ( "PP_DB_THRESHOLD", Pfloat(a) ),
+        PP_DB_ALL_OR_NONE(a) => ( "PP_DB_ALL_OR_NONE", Pbool(a) ),
+        PP_ICL_PTCACHE_SIZE(a) => ( "PP_ICL_PTCACHE_SIZE", Pint(a) ),
+
+        PP_RVC_FLAGS(a) => ( "PP_RVC_FLAGS", Pint(a) ),
+        PP_SBP_REMOVE(a) => ( "PP_SBP_REMOVE", Pint(a) ),
+        PP_TUV_EVALUATE(a) => ( "PP_TUV_EVALUATE", Pint(a) ),
+
+        PP_FID_ANIM_ACCURACY(a) => ( "PP_FID_ANIM_ACCURACY", Pfloat(a) ),
+        FAVOUR_SPEED(a) => ( "FAVOUR_SPEED", Pbool(a) ),
+        IMPORT_GLOBAL_KEYFRAME(a) => ( "IMPORT_GLOBAL_KEYFRAME", Pint(a) ),
+        IMPORT_MD2_KEYFRAME(a) => ( "IMPORT_MD2_KEYFRAME", Pint(a) ),
+        IMPORT_MD3_KEYFRAME(a) => ( "IMPORT_MD3_KEYFRAME", Pint(a) ),
+        IMPORT_MDC_KEYFRAME(a) => ( "IMPORT_MDC_KEYFRAME", Pint(a) ),
+        IMPORT_MDL_KEYFRAME(a) => ( "IMPORT_MDL_KEYFRAME", Pint(a) ),
+        IMPORT_SMD_KEYFRAME(a) => ( "IMPORT_SMD_KEYFRAME", Pint(a) ),
+        IMPORT_UNREAL_KEYFRAME(a) => ( "IMPORT_UNREAL_KEYFRAME", Pint(a) ),
+        IMPORT_AC_SEPARATE_BFCULL(a) => ( "IMPORT_AC_SEPARATE_BFCULL", Pbool(a) ),
+        IMPORT_AC_EVAL_SUBDIVISION(a) => ( "IMPORT_AC_EVAL_SUBDIVISION", Pbool(a) ),
+        IMPORT_UNREAL_HANDLE_FLAGS(a) => ( "UNREAL_HANDLE_FLAGS", Pbool(a) ),
+        IMPORT_TER_MAKE_UVS(a) => ( "IMPORT_TER_MAKE_UVS", Pbool(a) ),
+        IMPORT_ASE_RECONSTRUCT_NORMALS(a) => ( "IMPORT_ASE_RECONSTRUCT_NORMALS", Pbool(a) ),
+        IMPORT_MD3_HANDLE_MULTIPART(a) => ( "IMPORT_MD3_HANDLE_MULTIPART", Pbool(a) ),
+        IMPORT_MD3_SKIN_NAME(a) => ( "IMPORT_MD3_SKIN_NAME", Pstr(a) ),
+        IMPORT_MD3_SHADER_SRC(a) => ( "IMPORT_MD3_SHADER_SRC", Pstr(a) ),
+        IMPORT_MD5_NO_ANIM_AUTOLOAD(a) => ( "IMPORT_MD5_NO_ANIM_AUTOLOAD", Pbool(a) ),
+        IMPORT_LWO_ONE_LAYER_ONLY(a) => ( "IMPORT_LWO_ONE_LAYER_ONLY", Pint(a) ),
+        IMPORT_LWS_ANIM_START(a) => ( "IMPORT_LWS_ANIM_START", Pint(a) ),
+        IMPORT_LWS_ANIM_END(a) => ( "IMPORT_LWS_ANIM_END", Pint(a) ),
+        IMPORT_IRR_ANIM_FPS(a) => ( "IMPORT_IRR_ANIM_FPS", Pint(a) ),
+        IMPORT_OGRE_MATERIAL_FILE(a) => ( "IMPORT_OGRE_MATERIAL_FILE", Pstr(a) ),
+        IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME(a) => ( "IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME", Pbool(a) ),
+        IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS", Pbool(a) ),
+        IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS", Pbool(a) ),
+        IMPORT_IFC_CUSTOM_TRIANGULATION(a) => ( "IMPORT_IFC_CUSTOM_TRIANGULATION", Pbool(a) ),
+    }
+}
+
 // These are the default ones chosen at compile time, but they could be
 // different!
 #[cfg(untrue)]
@@ -622,6 +633,7 @@ mod default_compile {
 
 }
 
+// TODO(make this work)
 // /// Remove a specific color channel 'n'
 // #[inline(always)]
 // fn component_colors_n(n: u{

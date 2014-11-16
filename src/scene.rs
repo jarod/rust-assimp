@@ -11,6 +11,7 @@ use mesh::Mesh;
 use texture::Texture;
 use types::{Matrix4x4, AiString, MemoryInfo};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
+use postprocess::PostProcessSteps;
 use ffi;
 
 
@@ -347,11 +348,20 @@ impl<'a> Scene<'a> {
         }
     }
 
-    // pub fn apply_postprocessing(&mut self, flags: c_uint) {
-    // pub fn aiApplyPostProcessing(scene: *mut RawScene,
-    //                         flags: c_uint)
-    //                         -> *const RawScene;
-    // }
+    pub fn apply_postprocessing(&mut self,
+                                flags: &[PostProcessSteps])
+                                -> Result<(), &str> {
+        unsafe {
+            let flags = flags.iter().fold(0, |x, &y| x | y as u32);
+            let scene = ffi::aiApplyPostProcessing(self.raw_scene,
+                                                   flags);
+            if scene.is_null() {
+                Err("Post processing failed")
+            } else {
+                Ok(())
+            }
+        }
+    }
 }
 
 #[unsafe_destructor]

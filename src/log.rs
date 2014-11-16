@@ -1,52 +1,19 @@
 
-use libc::{c_char};
-use std::ptr;
+// use libc::{c_char};
 // use std::c_str::CString;
+use std::ptr;
 
+use types::AiBool;
 use ffi;
+use ffi::{DefaultLogStream_FILE, DefaultLogStream_STDOUT,
+          DefaultLogStream_STDERR, DefaultLogStream_DEBUGGER };
 
-// typedef void (*aiLogStreamCallback)(const char* /* message */,
-//                                     char* /* user */);
-type LogStreamCallback = fn (*const c_char /* msg */, *mut c_char /* user */);
-
-/// Enumerates predefined log streaming destinations.
-///
-/// Logging to these streams can be enabled with a single call to
-///  #LogStream::createDefaultStream or #aiAttachPredefinedLogStream(),
-///  respectively.
-#[repr(C)]
-pub enum DefaultLogStream {
-    /// Stream the log to a file
-    DefaultLogStream_FILE = 0x1,
-
-    /// Stream the log to std::cout
-    DefaultLogStream_STDOUT = 0x2,
-
-    /// Stream the log to std::cerr
-    DefaultLogStream_STDERR = 0x4,
-
-    /// MSVC only: Stream the log the the debugger
-    /// (thees relies on OutputDebugString from the Win32 SDK)
-    DefaultLogStream_DEBUGGER = 0x8,
-}
-
-pub enum LogStreamType<'a> {
-    LogStreamFile(&'a str),
+pub enum LogStream<'a> {
     LogStreamStdout,
     LogStreamStderr,
     LogStreamDebugger,
-    // LogStreamCustom(_)
-}
-
-/// C-API: Represents a log stream. A log stream receives all log messages and
-/// streams them _somewhere_.
-#[repr(C)]
-pub struct LogStream {
-    /// callback to be called
-    callback: LogStreamCallback,
-
-    /// user data to be passed to the callback
-    user: *mut c_char,
+    LogStreamFile(&'a str),
+    LogStreamCustom(&'a mut Writer+'a)
 }
 
 // TODO
@@ -68,10 +35,25 @@ pub struct LogStream {
 //     }
 // }
 
-pub fn add_log_stream(stream: LogStreamType) {
+// extern fn stream_call_back(msg: *const c_char, data: *const u8) {
+//     unsafe {
+//         // this code should work, but gives an Internal Compiler Error
+//         // let writer = data as *mut Writer;
+//         let cstr = CString::new(msg, false);
+//         (*stream).write(cstr.as_bytes()).unwrap();
+//     }
+// }
+
+pub fn enable_verbose_logging(choice: bool) {
+    unsafe {
+        ffi::aiEnableVerboseLogging(AiBool::new(choice))
+    }
+}
+
+pub fn add_log_stream(log_type: LogStream) {
     unsafe {
         let null = ptr::null();
-        let log = match stream {
+        let log = match log_type {
             LogStreamFile(fname) => fname.with_c_str(|s|
                 ffi::aiGetPredefinedLogStream(DefaultLogStream_FILE, s) ),
             LogStreamStdout =>
@@ -80,6 +62,15 @@ pub fn add_log_stream(stream: LogStreamType) {
                 ffi::aiGetPredefinedLogStream(DefaultLogStream_STDERR, null),
             LogStreamDebugger =>
                 ffi::aiGetPredefinedLogStream(DefaultLogStream_DEBUGGER, null),
+            LogStreamCustom(_writer) => {
+                // writer.write_be_u32(0u32);
+                // ffi::LogStream {
+                //     callback: stream_call_back,
+                //     // user data will be used to reference our writer
+                //     user: mem::transmute(writer),
+                // }
+                unimplemented!();
+            }
         };
         ffi::aiAttachLogStream(&log);
     }

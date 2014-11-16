@@ -4,23 +4,23 @@ use libc::{c_char, c_uint};
 use types::{AiString, AiBool, AiTrue};
 use std::c_str::CString;
 
-/// Flags for cheching how assimp was compiled
+/// Flags for checking how assimp was compiled
 #[repr(C, u32)]
-pub enum CFlags {
+pub enum CompileFlags {
     /// Assimp was compiled as a shared object (Windows: DLL)
-    CFlags_SHARED = 0x1,
+    CompileFlags_SHARED = 0x1,
 
     /// Assimp was compiled against STLport
-    CFlags_STLPORT = 0x2,
+    CompileFlags_STLPORT = 0x2,
 
     /// Assimp was compiled as a debug build
-    CFlags_DEBUG = 0x4,
+    CompileFlags_DEBUG = 0x4,
 
     /// Assimp was compiled with `ASSIMP_BUILD_BOOST_WORKAROUND` defined
-    CFlags_NOBOOST = 0x8,
+    CompileFlags_NOBOOST = 0x8,
 
     /// Assimp was compiled with `ASSIMP_BUILD_SINGLETHREADED` defined
-    CFlags_SINGLETHREADED = 0x10,
+    CompileFlags_SINGLETHREADED = 0x10,
 }
 
 // It appears assimp doesn't expose a way to get this information using the
@@ -174,7 +174,7 @@ pub fn get_compile_flags() -> u32 {
 }
 
 /// Check if a given compile flag is set
-pub fn is_flag_set(flag: CFlags) -> bool {
+pub fn is_flag_set(flag: CompileFlags) -> bool {
     unsafe { ( aiGetCompileFlags() & flag as u32 ) != 0 }
 }
 

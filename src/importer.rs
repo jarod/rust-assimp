@@ -1,66 +1,84 @@
+//! Defines the scene importer
 
-use libc::{c_int, c_float, c_char, c_uint};
+use libc::{c_int, c_float, c_char};
 use std::ptr;
 
 use scene::{Scene};
 use ffi;
-use config::{Config, Pint, Pfloat, Pbool, Pstr, decompose_property};
-// use fileio::{AiFileIO};
-
-/// Represents an opaque set of settings to be used during importing.
-#[repr(C)]
-pub struct PropertyStore {
-    sentinel: c_char,
-}
-
+use postprocess::{PostProcessSteps};
+use config::*;
 
 pub struct Importer {
-    property_store: *mut PropertyStore,
+    property_store: *mut ffi::PropertyStore,
+    flags: u32,
 }
 
 impl Importer {
-
-    fn new() -> Importer {
+    pub fn new() -> Importer {
         Importer {
             property_store: unsafe { ffi::aiCreatePropertyStore() },
+            flags: 0,
         }
     }
 
-    fn set_property(&mut self, config: Config) {
+    pub fn add_processing_steps(&mut self, set: &[PostProcessSteps]) {
+        self.flags = set.iter().fold(self.flags, |x, &y| x | y as u32);
+    }
+
+    pub fn rm_processing_steps(&mut self, set: &[PostProcessSteps]) {
+        self.flags = set.iter().fold(self.flags, |x, &y| x & !(y as u32));
+    }
+
+    pub fn reset_processing_steps(&mut self) {
+        self.flags = 0;
+    }
+
+    pub fn set_import_property(&mut self, config: ImportProperty) {
         let (s, wrapped_val) = decompose_property(config);
 
         unsafe {
             match wrapped_val {
-                Pfloat(val) =>
+                Pfloat(val) => {
                     ffi::aiSetImportPropertyFloat(self.property_store,
                                              s.as_ptr() as *const c_char,
-                                             val as c_float),
-                Pint(val) =>
+                                             val as c_float);
+                }
+                Pint(val) => {
                     ffi::aiSetImportPropertyInteger(self.property_store,
                                                s.as_ptr() as *const c_char,
-                                               val as c_int),
+                                               val as c_int);
+                }
                 Pbool(val) => {
                     let bool_int = match val { true => 1i, false => 0i };
+                    println!("bool_int : {}", bool_int);
                     ffi::aiSetImportPropertyInteger(self.property_store,
                                                s.as_ptr() as *const c_char,
                                                bool_int as c_int);
                 }
-                Pstr(val) => 
+                Pstr(val) => {
                     ffi::aiSetImportPropertyString(self.property_store,
                                               s.as_ptr() as *const c_char,
-                                              val),
+                                              val);
+                }
             }
         }
     }
 
-    fn import(&self, file_name: &str, flags: c_uint) -> Option<Scene> {
-        unsafe { 
+    pub fn reset_import_properties(&mut self) {
+        unsafe {
+            ffi::aiReleasePropertyStore(self.property_store);
+            self.property_store = ffi::aiCreatePropertyStore();
+        }
+    }
+
+    pub fn import(&self, file_name: &str) -> Option<Scene> {
+        unsafe {
             let raw = file_name.with_c_str(|file|
                 ffi::aiImportFileExWithProperties(
                     file,
-                    flags,
+                    self.flags,
                     ptr::null_mut(), // no custom file io system
-                    self.property_store as *const PropertyStore));
+                    self.property_store as *const ffi::PropertyStore));
             if raw.is_null() {
                 None
             } else {
@@ -78,20 +96,25 @@ impl Drop for Importer {
 
 #[cfg(test)]
 mod test {
+    // use std::io::MemWriter;
+    // use std::io::BufReader;
+
     use super::*;
     use config::*;
-    use log;
+
+    // Log to memory
+    // let mut writer = MemWriter::new();
+    // log::add_log_stream(log::LogStreamCustom(&mut writer));
+    // let mut reader = BufReader::new(writer.get_ref());
+    //
     #[test]
     fn test_set_property() {
-        log::add_log_stream(log::LogStreamStdout);
-        log::add_log_stream(log::LogStreamStderr);
-        log::add_log_stream(log::LogStreamFile("log.txt"));
-
         let mut imp = Importer::new();
 
-        imp.set_property(GLOB_MEASURE_TIME(true));
-        imp.set_property(PP_DB_THRESHOLD(0.5));
-        imp.set_property(IMPORT_MDC_KEYFRAME(0));
-        imp.import("cube.dae", 0);
+        imp.set_import_property(GLOB_MEASURE_TIME(true));
+        imp.set_import_property(PP_DB_THRESHOLD(0.5));
+        imp.set_import_property(PP_SLM_VERTEX_LIMIT(2500));
+
+        imp.import("cube.dae");
     }
 }

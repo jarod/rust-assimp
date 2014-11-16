@@ -1,10 +1,15 @@
 
-use scene::{RawScene};
 use libc::{c_char, c_uint, c_float, c_int};
-use types::{AiBool, AiString, MemoryInfo};
+
+use scene::{RawScene};
+use types::{AiString, MemoryInfo};
 use fileio::{AiFileIO};
-use importer::{PropertyStore};
-use log::{LogStream, DefaultLogStream};
+
+/// Represents an opaque set of settings to be used during importing.
+#[repr(C)]
+pub struct PropertyStore {
+    sentinel: c_char,
+}
 
 #[link(name = "assimp")]
 extern {
@@ -121,7 +126,7 @@ extern {
     /// processing steps are not really designed to 'fail'. To be exact, the
     /// aiProcess_ValidateDS flag is currently the only post processing step
     /// which can actually cause the scene to be reset to NULL.
-    pub fn aiApplyPostProcessing(scene: *mut RawScene,
+    pub fn aiApplyPostProcessing(scene: *const RawScene,
                              flags: c_uint)
                              -> *const RawScene;
 
@@ -192,77 +197,6 @@ extern {
     pub fn aiSetImportPropertyString(store: *mut PropertyStore,
                                      name: *const c_char,
                                      st: *const AiString);
-
-    /// Enable verbose logging.
-    ///
-    /// Verbose logging includes debug-related stuff
-    /// and detailed import statistics. This can have severe impact on import
-    /// performance and memory consumption. However, it might be useful to
-    /// find out why a file didn't read correctly.
-    pub fn aiEnableVerboseLogging(enable: AiBool);
-
-    /// Get one of the predefine log streams.
-    ///
-    /// This is the quick'n'easy solution to access Assimp's log system.
-    /// Attaching a log stream can slightly reduce Assimp's overall import
-    /// performance.
-    ///
-    /// Usage is rather simple. This example will stream the log to a file,
-    /// named log.txt, and the stdout stream of the process:
-    ///
-    /// ```c
-    ///   struct aiLogStream c;
-    ///   c = aiGetPredefinedLogStream(aiDefaultLogStream_FILE,"log.txt");
-    ///   aiAttachLogStream(&c);
-    ///   c = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
-    ///   aiAttachLogStream(&c);
-    /// ```
-    ///
-    /// # Parameters
-    ///
-    /// * pStreams One of the #aiDefaultLogStream enumerated values.
-    ///
-    /// * `file` Solely for the #aiDefaultLogStream_FILE flag: specifies the
-    ///   file to write to.  Pass NULL for all other flags.
-    ///
-    /// The log stream. callback is set to NULL if something went wrong.
-    // ASSIMP_API C_STRUCT aiLogStream aiGetPredefinedLogStream(
-    //     C_ENUM aiDefaultLogStream pStreams,
-    //     const char* file);
-    pub fn aiGetPredefinedLogStream(stream: DefaultLogStream,
-                                file: *const c_char)
-                                -> LogStream;
-
-    /// Attach a custom log stream to the libraries' logging system.
-    ///
-    /// Attaching a log stream can slightly reduce Assimp's overall import
-    /// performance. Multiple log-streams can be attached.
-    /// @param stream Describes the new log stream.
-    /// @note To ensure proepr destruction of the logging system, you need to manually
-    ///   call aiDetachLogStream() on every single log stream you attach.
-    ///   Alternatively (for the lazy folks) #aiDetachAllLogStreams is provided.
-    ///
-    // ASSIMP_API void aiAttachLogStream( const C_STRUCT aiLogStream* stream);
-    pub fn aiAttachLogStream(stream: *const LogStream);
-
-    /// Detach a custom log stream from the libraries' logging system.
-    ///
-    /// This is the counterpart of #aiAttachPredefinedLogStream.
-    /// If you attached a stream, don't forget to detach it again.
-    ///
-    /// @param stream The log stream to be detached.
-    /// @return AI_SUCCESS if the log stream has been detached successfully.
-    /// @see aiDetachAllLogStreams
-    // ASSIMP_API C_ENUM aiReturn aiDetachLogStream(
-    // const C_STRUCT aiLogStream* stream);
-
-    /// Detach all active log streams from the libraries' logging system.
-    ///
-    /// This ensures that the logging system is terminated properly and all
-    /// resources allocated by it are actually freed. If you attached a stream,
-    /// don't forget to detach it again.
-    // ASSIMP_API void aiDetachAllLogStreams(void);
-    pub fn aiDetachAllLogStreams();
 }
 
 // /** Reads the given file using user-defined I/O functions and returns

@@ -412,98 +412,133 @@ pub enum PostProcessSteps {
     /// * Use `AI_CONFIG_PP_DB_THRESHOLD` to control this.
     /// * Use `AI_CONFIG_PP_DB_ALL_OR_NONE` if you want bones removed if and
     ///   only if all bones within the scene qualify for removal.
-    Process_Debone  = 0x4000000
+    Process_Debone  = 0x4000000,
+
+
+    /// Shortcut flag for Direct3D-based applications.
+    ///
+    /// Supersedes the `Process_MakeLeftHanded` and `Process_FlipUVs` and
+    /// `Process_FlipWindingOrder` flags.  The output data matches Direct3D's
+    /// conventions: left-handed geometry, upper-left origin for UV coordinates
+    /// and finally clockwise face order, suitable for CCW culling.
+    #[deprecated]
+    Process_ConvertToLeftHanded = 0x1800004,
+
+
+    /// Default postprocess configuration optimizing the data for real-time
+    /// rendering.
+    ///
+    /// Applications would want to use this preset to load models on end-user
+    /// PCs, maybe for direct use in game.
+    ///
+    /// If you're using DirectX, don't forget to combine this value with the
+    /// `Process_ConvertToLeftHanded` step. If you don't support UV
+    /// transformations in your application apply the
+    /// `Process_TransformUVCoords` step, too.
+    ///
+    /// *  Process_CalcTangentSpace
+    /// *  Process_GenNormals
+    /// *  Process_JoinIdenticalVertices
+    /// *  Process_Triangulate
+    /// *  Process_GenUVCoords
+    /// *  Process_SortByPType
+    ProcessPreset_TargetRealtime_Fast = 0x4802b,
+
+    /// Default postprocess configuration optimizing the data for real-time
+    /// rendering.
+    ///
+    /// Unlike `ProcessPreset_TargetRealtime_Fast`, this configuration performs
+    /// some extra optimizations to improve rendering speed and to minimize memory
+    /// usage. It could be a good choice for a level editor environment where
+    /// import speed is not so important.
+    ///
+    /// If you're using DirectX, don't forget to combine this value with the
+    /// `Process_ConvertToLeftHanded` step. If you don't support UV
+    /// transformations in your application apply the `Process_TransformUVCoords`
+    /// step, too.
+    ///
+    /// *  Process_CalcTangentSpace
+    /// *  Process_GenSmoothNormals
+    /// *  Process_JoinIdenticalVertices
+    /// *  Process_ImproveCacheLocality
+    /// *  Process_LimitBoneWeights
+    /// *  Process_RemoveRedundantMaterials
+    /// *  Process_SplitLargeMeshes
+    /// *  Process_Triangulate
+    /// *  Process_GenUVCoords
+    /// *  Process_SortByPType
+    /// *  Process_FindDegenerates
+    /// *  Process_FindInvalidData
+    ProcessPreset_TargetRealtime_Quality = 0x79acb,
+
+    /// Default postprocess configuration optimizing the data for real-time
+    /// rendering.
+    ///
+    /// This preset enables almost every optimization step to achieve
+    /// perfectly optimized data. It's your choice for level editor
+    /// environments where import speed is not important.
+    ///
+    /// If you're using DirectX, don't forget to combine this value with the
+    /// `Process_ConvertToLeftHanded` step. If you don't support UV
+    /// transformations in your application, apply the
+    /// `Process_TransformUVCoords` step, too.
+    ///
+    ///  *  ProcessPreset_TargetRealtime_Quality
+    ///  *  Process_FindInstances
+    ///  *  Process_ValidateDataStructure
+    ///  *  Process_OptimizeMeshes
+    ///  *  Process_Debone
+    ProcessPreset_TargetRealtime_MaxQuality = 0x4379ecb,
 }
 
-/// Shortcut flag for Direct3D-based applications.
-///
-/// Supersedes the `Process_MakeLeftHanded` and `Process_FlipUVs` and
-/// `Process_FlipWindingOrder` flags.  The output data matches Direct3D's
-/// conventions: left-handed geometry, upper-left origin for UV coordinates
-/// and finally clockwise face order, suitable for CCW culling.
-#[allow(non_upper_case_globals)]
-#[deprecated]
-pub const Process_ConvertToLeftHanded : u32 =
-                            Process_MakeLeftHanded   as u32 |
-                            Process_FlipWindingOrder as u32 |
-                            Process_FlipUVs          as u32 ;
-
-/// Default postprocess configuration optimizing the data for real-time
-/// rendering.
-///
-/// Applications would want to use this preset to load models on end-user
-/// PCs, maybe for direct use in game.
-///
-/// If you're using DirectX, don't forget to combine this value with the
-/// `Process_ConvertToLeftHanded` step. If you don't support UV
-/// transformations in your application apply the
-/// `Process_TransformUVCoords` step, too.
-///
-/// Note: Please take the time to read the docs for the steps enabled by this
-/// preset.  Some of them offer further configurable properties, while some of
-/// them might not be of use for you so it might be better to not specify
-/// them.
-#[allow(non_upper_case_globals)]
-pub const ProcessPreset_TargetRealtime_Fast : u32 =
-                            Process_CalcTangentSpace       as u32 |
-                            Process_GenNormals             as u32 |
-                            Process_JoinIdenticalVertices  as u32 |
-                            Process_Triangulate            as u32 |
-                            Process_GenUVCoords            as u32 |
-                            Process_SortByPType            as u32 ;
-
-/// Default postprocess configuration optimizing the data for real-time
-/// rendering.
-///
-/// Unlike `ProcessPreset_TargetRealtime_Fast`, this configuration performs
-/// some extra optimizations to improve rendering speed and to minimize memory
-/// usage. It could be a good choice for a level editor environment where
-/// import speed is not so important.
-///
-/// If you're using DirectX, don't forget to combine this value with the
-/// `Process_ConvertToLeftHanded` step. If you don't support UV
-/// transformations in your application apply the `Process_TransformUVCoords`
-/// step, too.
-///
-/// Note: Please take the time to read the docs for the steps enabled by this
-/// preset.  Some of them offer further configurable properties, while some of
-/// them might not be of use for you so it might be better to not specify
-/// them.
-#[allow(non_upper_case_globals)]
-pub const ProcessPreset_TargetRealtime_Quality : u32 =
-                            Process_CalcTangentSpace          as u32 |
-                            Process_GenSmoothNormals          as u32 |
-                            Process_JoinIdenticalVertices     as u32 |
-                            Process_ImproveCacheLocality      as u32 |
-                            Process_LimitBoneWeights          as u32 |
-                            Process_RemoveRedundantMaterials  as u32 |
-                            Process_SplitLargeMeshes          as u32 |
-                            Process_Triangulate               as u32 |
-                            Process_GenUVCoords               as u32 |
-                            Process_SortByPType               as u32 |
-                            Process_FindDegenerates           as u32 |
-                            Process_FindInvalidData           as u32 ;
-
-/// Default postprocess configuration optimizing the data for real-time
-/// rendering.
-///
-/// This preset enables almost every optimization step to achieve
-/// perfectly optimized data. It's your choice for level editor
-/// environments where import speed is not important.
-///
-/// If you're using DirectX, don't forget to combine this value with the
-/// `Process_ConvertToLeftHanded` step. If you don't support UV
-/// transformations in your application, apply the
-/// `Process_TransformUVCoords` step, too.
-///
-/// Note: Please take the time to read the docs for the steps enabled by
-/// this preset.  Some of them offer further configurable properties,
-/// while some of them might not be of use for you so it might be better
-/// to not specify them.
-#[allow(non_upper_case_globals)]
-pub const ProcessPreset_TargetRealtime_MaxQuality : u32 =
-                        ProcessPreset_TargetRealtime_Quality as u32 |
-                        Process_FindInstances                as u32 |
-                        Process_ValidateDataStructure        as u32 |
-                        Process_OptimizeMeshes               as u32 |
-                        Process_Debone                       as u32 ;
+#[cfg(test)]
+mod test {
+    #![allow(deprecated)]
+    use super::*;
+    #[allow(non_upper_case_globals)]
+    pub const Process_ConvertToLeftHanded_test : u32 =
+                                Process_MakeLeftHanded   as u32 |
+                                Process_FlipWindingOrder as u32 |
+                                Process_FlipUVs          as u32 ;
+    #[allow(non_upper_case_globals)]
+    pub const ProcessPreset_TargetRealtime_Fast_test : u32 =
+                                Process_CalcTangentSpace       as u32 |
+                                Process_GenNormals             as u32 |
+                                Process_JoinIdenticalVertices  as u32 |
+                                Process_Triangulate            as u32 |
+                                Process_GenUVCoords            as u32 |
+                                Process_SortByPType            as u32 ;
+    #[allow(non_upper_case_globals)]
+    pub const ProcessPreset_TargetRealtime_Quality_test : u32 =
+                                Process_CalcTangentSpace          as u32 |
+                                Process_GenSmoothNormals          as u32 |
+                                Process_JoinIdenticalVertices     as u32 |
+                                Process_ImproveCacheLocality      as u32 |
+                                Process_LimitBoneWeights          as u32 |
+                                Process_RemoveRedundantMaterials  as u32 |
+                                Process_SplitLargeMeshes          as u32 |
+                                Process_Triangulate               as u32 |
+                                Process_GenUVCoords               as u32 |
+                                Process_SortByPType               as u32 |
+                                Process_FindDegenerates           as u32 |
+                                Process_FindInvalidData           as u32 ;
+    #[allow(non_upper_case_globals)]
+    pub const ProcessPreset_TargetRealtime_MaxQuality_test : u32 =
+                            ProcessPreset_TargetRealtime_Quality as u32 |
+                            Process_FindInstances                as u32 |
+                            Process_ValidateDataStructure        as u32 |
+                            Process_OptimizeMeshes               as u32 |
+                            Process_Debone                       as u32 ;
+    // Used to genearte the values used in the enum
+    #[test]
+    fn test_show_consts() {
+        assert!(Process_ConvertToLeftHanded as u32 ==
+                   Process_ConvertToLeftHanded_test);
+        assert!(ProcessPreset_TargetRealtime_MaxQuality as u32 ==
+                   ProcessPreset_TargetRealtime_MaxQuality_test);
+        assert!(ProcessPreset_TargetRealtime_Quality as u32 ==
+                   ProcessPreset_TargetRealtime_Quality_test);
+        assert!(ProcessPreset_TargetRealtime_Fast as u32 ==
+                   ProcessPreset_TargetRealtime_Fast_test);
+    }
+}

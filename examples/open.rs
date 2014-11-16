@@ -1,19 +1,3 @@
-rust-assimp [![Build Status](https://travis-ci.org/juxiliary/rust-assimp.svg?branch=master)](https://travis-ci.org/juxiliary/rust-assimp)
-===========
-
-[Documentation](http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/)
-
-## Building
-
-## 
-
-## Examles
-
-### Simple import example
-This example sets up logging, loads a model and prints all its vertices to
-stdout.
-
-```rust
 extern crate assimp;
 
 use assimp as ai;
@@ -37,4 +21,3 @@ fn main() {
         }
     }
 }
-```
