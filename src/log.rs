@@ -1,3 +1,4 @@
+//! Defines logging functions
 
 // use libc::{c_char};
 // use std::c_str::CString;
