@@ -1,5 +1,6 @@
-///! Defines the flags for all possible post processing steps.
+//! Defines all the possible post processing steps.
 
+/// Post processing steps that can be applied once a model is loaded.
 #[repr(C, u32)]
 pub enum PostProcessSteps {
     /// Calculates the tangents and bitangents for the imported meshes.

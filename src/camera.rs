@@ -14,29 +14,29 @@ use libc::{c_float};
 /// are usually specified directly in Camera, but beware, they could also
 /// be encoded in the node transformation.
 ///
-// /// The following (pseudo)code sample shows how to do it:
-// /// @code
-// /// // Get the camera matrix for a camera at a specific time
-// /// // if the node hierarchy for the camera does not contain
-// /// // at least one animated node this is a static computation
-// /// get-camera-matrix (node sceneRoot, camera cam) : matrix
-// /// {
-// ///    node   cnd = find-node-for-camera(cam)
-// ///    matrix cmt = identity()
-// ///
-// ///    // as usual - get the absolute camera transformation for this frame
-// ///    for each node nd in hierarchy from sceneRoot to cnd
-// ///      matrix cur
-// ///      if (is-animated(nd))
-// ///         cur = eval-animation(nd)
-// ///      else cur = nd->mTransformation;
-// ///      cmt = mult-matrices( cmt, cur )
-// ///    end for
-// ///
-// ///    // now multiply with the camera's own local transform
-// ///    cam = mult-matrices (cam, get-camera-matrix(cmt) )
-// /// }
-// /// @endcode
+/// The following (pseudo)code sample shows how to do it:
+/// ```pseudo
+/// // Get the camera matrix for a camera at a specific time
+/// // if the node hierarchy for the camera does not contain
+/// // at least one animated node this is a static computation
+/// get-camera-matrix (node sceneRoot, camera cam) : matrix
+/// {
+///    node   cnd = find-node-for-camera(cam)
+///    matrix cmt = identity()
+///
+///    // as usual - get the absolute camera transformation for this frame
+///    for each node nd in hierarchy from sceneRoot to cnd
+///      matrix cur
+///      if (is-animated(nd))
+///         cur = eval-animation(nd)
+///      else cur = nd->mTransformation;
+///      cmt = mult-matrices( cmt, cur )
+///    end for
+///
+///    // now multiply with the camera's own local transform
+///    cam = mult-matrices (cam, get-camera-matrix(cmt) )
+/// }
+/// ```
 ///
 /// Note: some file formats (such as 3DS, ASE) export a "target point" -
 /// the point the camera is looking at (it can even be animated). Assimp
@@ -57,7 +57,7 @@ pub struct Camera {
     /// Position of the camera relative to the coordinate space
     /// defined by the corresponding node.
     ///
-    /// The default value is 0|0|0.
+    /// The default value is (0,0,0).
     pub position: Vector3D,
 
     /// 'up' - vector of the camera coordinate system relative to
@@ -65,7 +65,7 @@ pub struct Camera {
     ///
     /// The 'right' vector of the camera coordinate system is
     /// the cross product of  the up and lookAt vectors.
-    /// The default value is 0|1|0. The vector
+    /// The default value is (0,1,0). The vector
     /// may be normalized, but it needn't.
     pub up: Vector3D,
 
@@ -73,7 +73,7 @@ pub struct Camera {
     /// the coordinate space defined by the corresponding node.
     ///
     /// This is the viewing direction of the user.
-    /// The default value is 0|0|1. The vector
+    /// The default value is (0,0,1). The vector
     /// may be normalized, but it needn't.
     pub look_at: Vector3D,
 

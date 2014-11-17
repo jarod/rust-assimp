@@ -1,30 +1,9 @@
-//! Defines constants for configurable properties for the library
-// /// Typically these properties are set via
-// /// #Assimp::Importer::SetPropertyFloat,
-// /// #Assimp::Importer::SetPropertyInteger or
-// /// #Assimp::Importer::SetPropertyString,
-// /// depending on the data type of a property. All properties have a
-// /// default value. See the doc for the mentioned methods for more details.
-// ///
-// /// The corresponding functions for use with the plain-c API are:
-// /// #SetImportPropertyInteger,
-// /// #SetImportPropertyFloat,
-// /// #SetImportPropertyString
+//! Defines all the available importer properties.
 
-// use mesh::PrimitiveType;
+use mesh::PrimitiveType;
 use types::AiString;
 
-// bitflags! {
-//     flags Flags: u32 {
-//         const FLAG_A       = 0x00000001,
-//         const FLAG_B       = 0x00000010,
-//         const FLAG_C       = 0x00000100,
-//         const FLAG_ABC     = FLAG_A.bits
-//                            | FLAG_B.bits
-//                            | FLAG_C.bits,
-//     }
-// }
-
+/// Properties that can be used to refine the behaviour of the importer.
 #[allow(non_camel_case_types)]
 pub enum ImportProperty<'a> {
     /// Enables time measurements.
@@ -110,7 +89,7 @@ pub enum ImportProperty<'a> {
     /// Note: Linefeeds, tabs or carriage returns are treated as whitespace.
     ///   Material names are case sensitive.
     ///
-    /// Default value: n/a
+    /// Propety type Default value: n/a
     PP_RRM_EXCLUDE_LIST(&'a AiString),
 
     ///  Configures the aiProcess_PretransformVertices step to
@@ -222,27 +201,28 @@ pub enum ImportProperty<'a> {
     /// Property type: integer.
     PP_ICL_PTCACHE_SIZE(int),
 
-    /// Input parameter to the Process_RemoveComponent step:
+    /// Input parameter to the `Process_RemoveComponent` step:
     /// Specifies the parts of the data structure to be removed.
     ///
     /// See the documentation to this step for further details. The property
     /// is expected to be an integer, a bitwise combination of the
-    /// Component flags defined above in this header. The default
-    /// value is 0. Important: if no valid mesh is remaining after the
+    /// Component flags defined above in this header.
+    ///
+    /// Important: if no valid mesh is remaining after the
     /// step has been executed (e.g you thought it was funny to specify ALL
     /// of the flags defined above) the import FAILS. Mainly because there is
     /// no data to work on anymore ...
-    PP_RVC_FLAGS(int),
+    ///
+    /// Propety type: array of Component's. Default: no components
+    PP_RVC_FLAGS(&'a [Component]),
 
-    /// Input parameter to the Process_SortByPType step:
-    /// Specifies which primitive types are removed by the step.
+    /// Input parameter to the `Process_SortByPType` step.
     ///
-    /// This is a bitwise combination of the PrimitiveType flags.
-    /// Specifying all of them is illegal, of course. A typical use would
-    /// be to exclude all line and point meshes from the import.
+    /// Specifies which primitive types are removed by the step.  A typical
+    /// use would be to exclude all line and point meshes from the import.
     ///
-    /// This is an integer property, its default value is 0.
-    PP_SBP_REMOVE(int),
+    /// PropetyType: array of PrimitiveType. Default: no primitives are removed
+    PP_SBP_REMOVE(&'a [PrimitiveType]),
 
     /// Input parameter to the Process_FindInvalidData step:
     /// Specifies the floating-point accuracy for animation values. The step
@@ -259,10 +239,11 @@ pub enum ImportProperty<'a> {
     /// Input parameter to the Process_TransformUVCoords step:
     /// Specifies which UV transformations are evaluated.
     ///
-    /// This is a bitwise combination of the AI_UVTRAFO_XXX flags (integer
-    /// property, of course). By default all transformations are enabled
-    /// (AI_UVTRAFO_ALL).
-    PP_TUV_EVALUATE(int),
+    /// This is a bitwise combination of the TransformUV flags.
+    ///
+    /// Property type: array of TransformUV
+    /// By default all transformations are enabled (TransformUV_ALL).
+    PP_TUV_EVALUATE(&'a [TransformUV]),
 
     /// A hint to assimp to favour speed against import quality.
     ///
@@ -275,15 +256,15 @@ pub enum ImportProperty<'a> {
 
     /// Set the vertex animation keyframe to be imported
     ///
-    /// ASSIMP does not support vertex keyframes (only bone animation is supported).
-    /// The library reads only one frame of models with vertex animations.
-    /// By default this is the first frame.
+    /// ASSIMP does not support vertex keyframes (only bone animation is
+    /// supported).  The library reads only one frame of models with vertex
+    /// animations.  By default this is the first frame.
     ///
     /// Note: This option applies to all importers.
     /// However, it is also possible to override the global setting
-    /// for a specific loader. You can use the AI_CONFIG_IMPORT_XXX_KEYFRAME
-    /// options (where XXX is a placeholder for the file format for which you
-    /// want to override the global setting).
+    /// for a specific loader. You can use the `IMPORT_<fmt>_KEYFRAME`
+    /// options (where `<fmt>` is a placeholder for the file format for which
+    /// you want to override the global setting).
     ///
     /// Property type: integer. The default value is 0.
     IMPORT_GLOBAL_KEYFRAME(int),
@@ -409,10 +390,11 @@ pub enum ImportProperty<'a> {
     /// is not set, the importer takes the animation start from the input LWS
     /// file ('FirstFrame' line)<br>
     ///
-    /// @see AI_CONFIG_IMPORT_LWS_ANIM_END - end of the imported time range
+    /// See also `IMPORT_LWS_ANIM_END` - end of the imported time range
     ///
     /// Property type: Integer. Default value: taken from file.
     IMPORT_LWS_ANIM_START(int),
+    /// See `IMPORT_LWS_ANIM_START` - end of the imported time range
     IMPORT_LWS_ANIM_END(int),
 
     /// Defines the output frame rate of the IRR loader.
@@ -477,140 +459,96 @@ pub enum ImportProperty<'a> {
     IMPORT_IFC_CUSTOM_TRIANGULATION(bool),
 }
 
+/// Options for the `Process_TransformUVCoords` post processing step
 #[repr(C, u32)]
 pub enum TransformUV {
-    /// TransformUVCoords evaluates UV scalings
+    /// Process_TransformUVCoords evaluates UV scalings
     TransformUV_SCALING = 0x1,
 
-    /// TransformUVCoords evaluates UV rotations
+    /// Process_TransformUVCoords evaluates UV rotations
     TransformUV_ROTATION = 0x2,
 
-    /// TransformUVCoords evaluates UV translation
+    /// Process_TransformUVCoords evaluates UV translation
     TransformUV_TRANSLATION = 0x4,
 
-    /// Everything baked together -> default value
-    // UVTransform_ALL = (UVTRAFO_SCALING  |
-    //                    UVTRAFO_ROTATION |
-    //                    UVTRAFO_TRANSLATION);
+    /// Process_TransformUVCoords evaluates UV scaling, rotation and translating.
+    ///
+    /// * TransformUV_SCALING
+    /// * TransformUV_ROTATION
+    /// * TransformUV_TRANSLATION
     TransformUV_ALL = 0x7,
 }
 
-/// Enumerates components of the `Scene` and `Mesh` data structures
-/// that can be excluded from the import using the aiPrpcess_RemoveComponent step.
+// TODO(make this work)
+// /// Remove a specific color channel 'n'
+// #[inline(always)]
+// fn component_colors_n(n: u{
+// #define Component_COLORSn(n) (1u32 << (n+20u))
+// }
+
+// // Remove a specific UV channel 'n'
+// #define Component_TEXCOORDSn(n) (1u << (n+25u))
+
+
+/// Components of the `Scene` and `Mesh` data structures that can be excluded
+/// from the import using the `Propcess_RemoveComponent` step.
 ///
-/// See the documentation to aiProcess_RemoveComponent for more details.
+/// See the documentation to `Process_RemoveComponent` for more details.
 #[repr(C, u32)]
 pub enum Component {
     /// Normal vectors
-    Component_NORMALS = 0x2,
+    ComponentNormals = 0x2,
 
     /// Tangents and bitangents go always together ...
-    Component_TANGENTS_AND_BITANGENTS = 0x4,
+    ComponentTangentsAndBitangents = 0x4,
 
-    /// ALL color sets Use Component_COLORn(N) to specify the N'th set
-    Component_COLORS = 0x8,
+    //TODO make this work
+    /// ALL color sets use Component_COLORn(N) to specify the N'th set
+    ComponentColors = 0x8,
 
+    //TODO
     /// ALL texture UV sets Component_TEXCOORDn(N) to specify the N'th set
-    Component_TEXCOORDS = 0x10,
+    ComponentTexcoords = 0x10,
 
     /// Removes all bone weights from all meshes.
     ///
     /// The scenegraph nodes corresponding to the bones are NOT removed.  Use
     /// the Process_OptimizeGraph step to do this
-    Component_BONEWEIGHTS = 0x20,
+    ComponentBoneweights = 0x20,
 
     /// Removes all node animations
     ///
     /// The corresponding scenegraph nodes are NOT removed.  use the
     /// `Process_OptimizeGraph` step to do this
-    Component_ANIMATIONS = 0x40,
+    ComponentAnimations = 0x40,
 
     /// Removes all embedded textures (Scene::mTextures)
-    Component_TEXTURES = 0x80,
+    ComponentTextures = 0x80,
 
-    /// Removes all light sources (Scene::mLights).  The corresponding
-    /// scenegraph nodes are NOT removed.  use the Process_OptimizeGraph
-    /// step to do this
-    Component_LIGHTS = 0x100,
+    /// Removes all light sources (Scene::mLights).
+    ///
+    /// The corresponding scenegraph nodes are *not* removed. Use the
+    /// Process_OptimizeGraph step to do this
+    ComponentLights = 0x100,
 
-    /// Removes all light sources (Scene::mCameras).  The corresponding
-    /// scenegraph nodes are NOT removed.  use the Process_OptimizeGraph
-    /// step to do this
-    Component_CAMERAS = 0x200,
+    /// Removes all cameras.
+    ///
+    /// The corresponding scenegraph nodes are *not* removed. Use the
+    /// Process_OptimizeGraph step to remove them.
+    ComponentCameras = 0x200,
 
     /// Removes all meshes (Scene::mMeshes).
-    Component_MESHES = 0x400,
+    ComponentMeshes = 0x400,
 
     /// Removes all materials.
     ///
     /// One default material will be generated, so `Scene::num_materials`
     /// will be 1.
-    Component_MATERIALS = 0x800,
+    ComponentMaterials = 0x800,
 }
 
-pub enum PropertyType<'a> {
-    Pfloat(f32),
-    Pint(int),
-    Pbool(bool),
-    Pstr(&'a AiString),
-}
-
-pub fn decompose_property(config: ImportProperty) -> (&'static str, PropertyType) {
-    match config {
-        GLOB_MEASURE_TIME(a) => ( "GLOB_MEASURE_TIME", Pbool(a) ),
-        PP_SBBC_MAX_BONES(a) => ( "PP_SBBC_MAX_BONES", Pint(a) ),
-        PP_CT_MAX_SMOOTHING_ANGLE(a) => ( "PP_CT_MAX_SMOOTHING_ANGLE", Pfloat(a) ),
-        PP_CT_TEXTURE_CHANNEL_INDEX(a) => ( "PP_CT_TEXTURE_CHANNEL_INDEX", Pint(a) ),
-        PP_GSN_MAX_SMOOTHING_ANGLE(a) => ( "PP_GSN_MAX_SMOOTHING_ANGLE", Pfloat(a) ),
-        IMPORT_MDL_COLORMAP(a) => ( "IMPORT_MDL_COLORMAP", Pstr(a) ),
-        PP_RRM_EXCLUDE_LIST(a) => ( "PP_RRM_EXCLUDE_LIST", Pstr(a) ),
-        PP_PTV_KEEP_HIERARCHY(a) => ( "PP_PTV_KEEP_HIERARCHY", Pbool(a) ),
-        PP_PTV_NORMALIZE(a)  => ( "PP_PTV_NORMALIZE", Pfloat(a) ),
-        PP_FD_REMOVE(a) => ( "PP_FD_REMOVE", Pbool(a) ),
-        PP_OG_EXCLUDE_LIST(a)    => ( "PP_OG_EXCLUDE_LIST", Pstr(a) ),
-        PP_SLM_TRIANGLE_LIMIT(a) => ( "PP_SLM_TRIANGLE_LIMIT", Pint(a) ),
-        PP_SLM_VERTEX_LIMIT(a) => ( "PP_SLM_VERTEX_LIMIT", Pint(a) ),
-        PP_LBW_MAX_WEIGHTS(a) => ( "PP_LBW_MAX_WEIGHTS", Pint(a) ),
-        PP_DB_THRESHOLD(a) => ( "PP_DB_THRESHOLD", Pfloat(a) ),
-        PP_DB_ALL_OR_NONE(a) => ( "PP_DB_ALL_OR_NONE", Pbool(a) ),
-        PP_ICL_PTCACHE_SIZE(a) => ( "PP_ICL_PTCACHE_SIZE", Pint(a) ),
-
-        PP_RVC_FLAGS(a) => ( "PP_RVC_FLAGS", Pint(a) ),
-        PP_SBP_REMOVE(a) => ( "PP_SBP_REMOVE", Pint(a) ),
-        PP_TUV_EVALUATE(a) => ( "PP_TUV_EVALUATE", Pint(a) ),
-
-        PP_FID_ANIM_ACCURACY(a) => ( "PP_FID_ANIM_ACCURACY", Pfloat(a) ),
-        FAVOUR_SPEED(a) => ( "FAVOUR_SPEED", Pbool(a) ),
-        IMPORT_GLOBAL_KEYFRAME(a) => ( "IMPORT_GLOBAL_KEYFRAME", Pint(a) ),
-        IMPORT_MD2_KEYFRAME(a) => ( "IMPORT_MD2_KEYFRAME", Pint(a) ),
-        IMPORT_MD3_KEYFRAME(a) => ( "IMPORT_MD3_KEYFRAME", Pint(a) ),
-        IMPORT_MDC_KEYFRAME(a) => ( "IMPORT_MDC_KEYFRAME", Pint(a) ),
-        IMPORT_MDL_KEYFRAME(a) => ( "IMPORT_MDL_KEYFRAME", Pint(a) ),
-        IMPORT_SMD_KEYFRAME(a) => ( "IMPORT_SMD_KEYFRAME", Pint(a) ),
-        IMPORT_UNREAL_KEYFRAME(a) => ( "IMPORT_UNREAL_KEYFRAME", Pint(a) ),
-        IMPORT_AC_SEPARATE_BFCULL(a) => ( "IMPORT_AC_SEPARATE_BFCULL", Pbool(a) ),
-        IMPORT_AC_EVAL_SUBDIVISION(a) => ( "IMPORT_AC_EVAL_SUBDIVISION", Pbool(a) ),
-        IMPORT_UNREAL_HANDLE_FLAGS(a) => ( "UNREAL_HANDLE_FLAGS", Pbool(a) ),
-        IMPORT_TER_MAKE_UVS(a) => ( "IMPORT_TER_MAKE_UVS", Pbool(a) ),
-        IMPORT_ASE_RECONSTRUCT_NORMALS(a) => ( "IMPORT_ASE_RECONSTRUCT_NORMALS", Pbool(a) ),
-        IMPORT_MD3_HANDLE_MULTIPART(a) => ( "IMPORT_MD3_HANDLE_MULTIPART", Pbool(a) ),
-        IMPORT_MD3_SKIN_NAME(a) => ( "IMPORT_MD3_SKIN_NAME", Pstr(a) ),
-        IMPORT_MD3_SHADER_SRC(a) => ( "IMPORT_MD3_SHADER_SRC", Pstr(a) ),
-        IMPORT_MD5_NO_ANIM_AUTOLOAD(a) => ( "IMPORT_MD5_NO_ANIM_AUTOLOAD", Pbool(a) ),
-        IMPORT_LWO_ONE_LAYER_ONLY(a) => ( "IMPORT_LWO_ONE_LAYER_ONLY", Pint(a) ),
-        IMPORT_LWS_ANIM_START(a) => ( "IMPORT_LWS_ANIM_START", Pint(a) ),
-        IMPORT_LWS_ANIM_END(a) => ( "IMPORT_LWS_ANIM_END", Pint(a) ),
-        IMPORT_IRR_ANIM_FPS(a) => ( "IMPORT_IRR_ANIM_FPS", Pint(a) ),
-        IMPORT_OGRE_MATERIAL_FILE(a) => ( "IMPORT_OGRE_MATERIAL_FILE", Pstr(a) ),
-        IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME(a) => ( "IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME", Pbool(a) ),
-        IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS", Pbool(a) ),
-        IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS", Pbool(a) ),
-        IMPORT_IFC_CUSTOM_TRIANGULATION(a) => ( "IMPORT_IFC_CUSTOM_TRIANGULATION", Pbool(a) ),
-    }
-}
-
-// These are the default ones chosen at compile time, but they could be
-// different!
+// NOTE: These values can be specified at compile time, so I don't see much
+// point in including them.
 #[cfg(untrue)]
 mod default_compile {
     // default value for AI_CONFIG_PP_SLM_TRIANGLE_LIMIT
@@ -632,17 +570,6 @@ mod default_compile {
     pub const ICL_PTCACHE_SIZE : u32 = 12;
 
 }
-
-// TODO(make this work)
-// /// Remove a specific color channel 'n'
-// #[inline(always)]
-// fn component_colors_n(n: u{
-// #define Component_COLORSn(n) (1u32 << (n+20u))
-// }
-
-// // Remove a specific UV channel 'n'
-// #define Component_TEXCOORDSn(n) (1u << (n+25u))
-
 
 // ###########################################################################
 // LIBRARY SETTINGS

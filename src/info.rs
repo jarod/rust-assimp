@@ -1,8 +1,9 @@
 //! Defines functions to retrieve information about the version of assimp being used.
 
-use libc::{c_char, c_uint};
-use types::{AiString, AiBool, AiTrue};
 use std::c_str::CString;
+
+use types::{AiString, AiTrue};
+use ffi;
 
 /// Flags for checking how assimp was compiled
 #[repr(C, u32)]
@@ -117,33 +118,16 @@ pub enum CompileFlags {
 //     const char* mFileExtensions;
 // }//}}}
 
-#[link(name = "assimp")]
-extern {
-    fn aiGetLegalString() -> *const c_char;
-
-    fn aiGetVersionMinor() -> c_uint;
-
-    fn aiGetVersionMajor() -> c_uint;
-
-    fn aiGetVersionRevision() -> c_uint;
-
-    fn aiGetCompileFlags() -> c_uint;
-
-    fn aiGetExtensionList(out: *mut AiString);
-
-    fn aiIsExtensionSupported(ext: *const c_char) -> AiBool;
-}
-
 /// Get the version number of assimp as a tuple `(major, minor, revision)`
 pub fn get_version() -> (uint, uint, uint) {
     let major = unsafe {
-        aiGetVersionMajor() as uint
+        ffi::aiGetVersionMajor() as uint
     };
     let minor = unsafe {
-        aiGetVersionMinor() as uint
+        ffi::aiGetVersionMinor() as uint
     };
     let rev = unsafe {
-        aiGetVersionRevision() as uint
+        ffi::aiGetVersionRevision() as uint
     };
     (major, minor, rev)
 }
@@ -151,7 +135,7 @@ pub fn get_version() -> (uint, uint, uint) {
 /// Get a string containg the assimp licene
 pub fn get_legal_string() -> String {
     unsafe {
-        CString::new(aiGetLegalString(), false).to_string()
+        CString::new(ffi::aiGetLegalString(), false).to_string()
     }
 }
 
@@ -159,10 +143,10 @@ pub fn get_legal_string() -> String {
 ///
 /// If a file extension is contained in the list this does, of course, not
 /// mean that assimp is able to load all files with this extension.
-pub fn get_supported_exts() -> String {
+pub fn get_supported_import_exts() -> String {
     let mut exts = AiString::new();
     unsafe {
-        aiGetExtensionList(&mut exts);
+        ffi::aiGetExtensionList(&mut exts);
     }
     // Don't expect this to fail
     exts.as_str().unwrap().into_string()
@@ -170,12 +154,12 @@ pub fn get_supported_exts() -> String {
 
 /// Returns the set compile flags
 pub fn get_compile_flags() -> u32 {
-    unsafe { aiGetCompileFlags() }
+    unsafe { ffi::aiGetCompileFlags() }
 }
 
 /// Check if a given compile flag is set
 pub fn is_flag_set(flag: CompileFlags) -> bool {
-    unsafe { ( aiGetCompileFlags() & flag as u32 ) != 0 }
+    unsafe { ( ffi::aiGetCompileFlags() & flag as u32 ) != 0 }
 }
 
 /// Returns whether a given file extension is supported by assimp
@@ -184,9 +168,9 @@ pub fn is_flag_set(flag: CompileFlags) -> bool {
 ///
 /// * `extension` Extension for which the function queries support for.
 ///   Must include a leading dot '.'. Example: '.3ds'
-pub fn is_supported_ext(ext: &str) -> bool {
+pub fn is_ext_supported(ext: &str) -> bool {
     unsafe {
-        ext.with_c_str(|s| aiIsExtensionSupported(s)) == AiTrue
+        ext.with_c_str(|s| ffi::aiIsExtensionSupported(s)) == AiTrue
     }
 }
 
@@ -207,8 +191,8 @@ mod test {
         println!("{}", info::get_legal_string());
 
         // Check is supported
-        println!("support dae : {}", info::is_supported_ext(".dae"));
-        println!("support md3 : {}", info::is_supported_ext(".md3"));
-        println!("support mad : {}", info::is_supported_ext(".mad"));
+        println!("support dae : {}", info::is_ext_supported(".dae"));
+        println!("support md3 : {}", info::is_ext_supported(".md3"));
+        println!("support mad : {}", info::is_ext_supported(".mad"));
     }
 }

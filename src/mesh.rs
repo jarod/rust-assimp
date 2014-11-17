@@ -6,48 +6,44 @@ use types::{Vector3D, Color4D, Matrix4x4, AiString};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
 
 /// Maximum number of indices per face (polygon).
-const AI_MAX_FACE_INDICES : uint = 0x7fff;
+pub const AI_MAX_FACE_INDICES : uint = 0x7fff;
 
 /// Maximum number of indices per face (polygon).
-const AI_MAX_BONE_WEIGHTS : uint = 0x7fffffff;
+pub const AI_MAX_BONE_WEIGHTS : uint = 0x7fffffff;
 
 /// Maximum number of vertices per mesh.
-const AI_MAX_VERTICES : uint = 0x7fffffff;
+pub const AI_MAX_VERTICES : uint = 0x7fffffff;
 
 /// Maximum number of faces per mesh.
-const AI_MAX_FACES : uint = 0x7fffffff;
+pub const AI_MAX_FACES : uint = 0x7fffffff;
 
 /// Supported number of vertex color sets per mesh.
-const AI_MAX_NUMBER_OF_COLOR_SETS : uint = 0x8;
+pub const AI_MAX_NUMBER_OF_COLOR_SETS : uint = 0x8;
 
 /// Supported number of texture coord sets (uv[w] channels) per mesh
-const AI_MAX_NUMBER_OF_TEXTURECOORDS : uint = 0x8;
+pub const AI_MAX_NUMBER_OF_TEXTURECOORDS : uint = 0x8;
 
 /// A single face in a mesh, referring to multiple vertices.
 ///
 /// If num_indices is 3, we call the face 'triangle', for num_indices > 3
-/// it's called 'polygon'.
+/// it's classed as a 'polygon'.
 ///
-/// Mesh::primitive_type can be queried to quickly examine which types of
-/// primitive are actually present in a mesh. The #aiProcess_SortByPType flag
+/// Mesh::primitive_types can be queried to quickly examine which types of
+/// primitive are actually present in a mesh. The `Process_SortByPType` flag
 /// executes a special post-processing algorithm which splits meshes with
 /// *different* primitive types mixed up (e.g. lines and triangles) in several
-/// 'clean' submeshes. Furthermore there is a configuration option (
-/// #AI_CONFIG_PP_SBP_REMOVE) to force #aiProcess_SortByPType to remove
+/// 'clean' submeshes. Furthermore there is a configuration option
+/// `PP_SBP_REMOVE` to force `Process_SortByPType` to remove
 /// specific kinds of primitives from the imported scene, completely and forever.
 /// In many cases you'll probably want to set this setting to
-/// @code
-/// aiPrimitiveType_LINE|aiPrimitiveType_POINT
-/// @endcode
-/// Together with the #aiProcess_Triangulate flag you can then be sure that
+/// ` PrimitiveType_LINE | PrimitiveType_POINT `
+/// Together with the `Process_Triangulate` flag you can then be sure that
 /// Face::num_indices is always 3.
-/// @note Take a look at the @link data Data Structures page @endlink for
-/// more information on the layout and winding order of a face.
 #[repr(C)]
 pub struct Face {
     /// Number of indices defining this face.
     ///
-    /// The maximum value for this member is AI_MAX_FACE_INDICES.
+    /// The maximum value for this member is `AI_MAX_FACE_INDICES`.
     pub num_indices: c_uint,
 
     /// Pointer to the indices array. Size of the array is given in numIndices.
@@ -55,6 +51,7 @@ pub struct Face {
 }
 
 impl Face {
+    /// Get the list of indices referenced by this face.
     pub fn get_indices(&self) -> &[u32] {
         unsafe { ptr_to_slice(self.indices, self.num_indices as uint) }
     }
@@ -85,7 +82,7 @@ pub struct Bone {
 
     /// The number of vertices affected by this bone
     ///
-    /// The maximum value for this member is #AI_MAX_BONE_WEIGHTS.
+    /// The maximum value for this member is `AI_MAX_BONE_WEIGHTS`.
     pub num_weights: c_uint,
 
     /// The vertices affected by this bone
@@ -96,6 +93,7 @@ pub struct Bone {
 }
 
 impl Bone {
+    /// Get the vertices affected by this bone
     pub fn get_weights(&self) -> &[VertexWeight] {
         unsafe { ptr_to_slice(self.weights, self.num_weights as uint) }
     }
@@ -140,7 +138,7 @@ pub fn get_primitive_type(n: u32) -> PrimitiveType {
 /// them to a time offset.
 #[repr(C)]
 pub struct AnimMesh {
-    /// Replacement for Mesh::vertices.
+    /// Replacement for Mesh vertices.
     ///
     /// If this array is non-NULL, it *must* contain mNumVertices entries.
     /// The corresponding array in the host mesh must be non-NULL as well -
@@ -149,46 +147,71 @@ pub struct AnimMesh {
     /// the source data is taken instead)
     vertices: *mut Vector3D,
 
-    /// Replacement for Mesh::normals.
+    /// Replacement for Mesh normals.
     normals: *mut Vector3D,
 
-    /// Replacement for Mesh::tangents.
+    /// Replacement for Mesh tangents.
     tangents: *mut Vector3D,
 
-    /// Replacement for Mesh::bitangents.
+    /// Replacement for Mesh bitangents.
     bitangents: *mut Vector3D,
 
-    /// Replacement for Mesh::colors
+    /// Replacement for Mesh colors
     colors: *mut [Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
 
-    /// Replacement for Mesh::texture_coords
+    /// Replacement for Mesh texture_coords
     texture_coords: *mut [Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
 
-    /// The number of vertices in the aiAnimMesh, and thus the length of all
+    /// The number of vertices in the AnimMesh, and thus the length of all
     /// the member arrays.
     ///
-    /// This has always the same value as the mNumVertices property in the
-    /// corresponding aiMesh. It is duplicated here merely to make the length
-    /// of the member arrays accessible even if the aiMesh is not known, e.g.
+    /// This has always the same value as the num_vertices property in the
+    /// corresponding Mesh. It is duplicated here merely to make the length
+    /// of the member arrays accessible even if the Mesh is not known, e.g.
     /// from language bindings.
-    num_vertices: c_uint,
+    pub num_vertices: c_uint,
 }
 
 impl AnimMesh {
+    /// Replacement for Mesh vertices.
+    ///
+    /// If the array is present, it *must* contain num_vertices entries.
+    /// The corresponding array in the host mesh must not be `None` as well -
+    /// animation meshes may neither add or nor remove vertex components (if a
+    /// replacement array is `None` and the corresponding source array is not,
+    /// the source data is taken instead)
     pub fn get_vertices(&self) -> &[Vector3D] {
         unsafe { ptr_to_slice(self.vertices, self.num_vertices as uint) }
     }
-    pub fn get_normals(&self) -> &[Vector3D] {
-        unsafe { ptr_to_slice(self.normals, self.num_vertices as uint) }
+
+    /// Replacement for Mesh normals.
+    pub fn get_normals(&self) -> Option<&[Vector3D]> {
+        if self.normals.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.normals, self.num_vertices as uint)) }
     }
-    pub fn get_tangents(&self) -> &[Vector3D] {
-        unsafe { ptr_to_slice(self.tangents, self.num_vertices as uint) }
+
+    /// Replacement for Mesh tangents.
+    pub fn get_tangents(&self) -> Option<&[Vector3D]> {
+        if self.tangents.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.tangents, self.num_vertices as uint)) }
     }
-    pub fn get_colors(&self) -> &[[Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS]] {
-        unsafe { ptr_to_slice(self.colors, self.num_vertices as uint) }
+
+    /// Replacement for Mesh bitangents.
+    pub fn get_bitangents(&self) -> Option<&[Vector3D]> {
+        if self.bitangents.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.bitangents, self.num_vertices as uint)) }
     }
-    pub fn get_texure_coords(&self) -> &[[Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS]] {
-        unsafe { ptr_to_slice(self.texture_coords, self.num_vertices as uint) }
+
+    /// Replacement for Mesh colors
+    pub fn get_colors(&self) -> Option<&[[Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS]]> {
+        if self.colors.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.colors, self.num_vertices as uint)) }
+    }
+
+    /// Replacement for Mesh texture_coords
+    pub fn get_texure_coords(&self) -> Option<&[[Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS]]> {
+        if self.texture_coords.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.texture_coords, self.num_vertices as uint)) }
     }
 }
 
@@ -206,7 +229,7 @@ impl AnimMesh {
 /// A Mesh uses only a single material which is referenced by a material ID.
 ///
 /// Note: The positions field is usually not optional. However, vertex
-/// positions *could* be missing if the #AI_SCENE_FLAGS_INCOMPLETE flag is set
+/// positions *could* be missing if the `SceneFlags_INCOMPLETE` flag is set
 /// in Scene::flags
 #[repr(C)]
 pub struct Mesh {
@@ -360,31 +383,107 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    /// Vertex positions.
+    ///
+    /// This array is always present in a mesh. The array is
+    /// num_vertices in size.
     pub fn get_vertices(&self) -> &[Vector3D] {
         unsafe { ptr_to_slice(self.vertices, self.num_vertices as uint) }
     }
 
-    pub fn get_normals(&self) -> &[Vector3D] {
-        unsafe { ptr_to_slice(self.normals, self.num_vertices as uint) }
+    /// Vertex normals.
+    ///
+    /// The array contains normalized vectors, NULL if not present.
+    /// The array is num_vertices in size. Normals are undefined for
+    /// point and line primitives. A mesh consisting of points and
+    /// lines only may not have normal vectors. Meshes with mixed
+    /// primitive types (i.e. lines and triangles) may have normals,
+    /// but the normals for vertices that are only referenced by
+    /// point or line primitives are undefined and set to QNaN (WARN:
+    /// qNaN compares to inequal to *everything*, even to qNaN itself.
+    /// Using code like this to check whether a field is qnan is:
+    ///
+    /// ```c
+    /// is_qnan(f) (f != f)
+    /// ```
+    ///
+    /// still dangerous because even 1.f == 1.f could evaluate to false! (
+    /// remember the subtleties of IEEE754 artithmetics).    ///
+    ///
+    /// Note: Normal vectors computed by Assimp are always unit-length.
+    /// However, this needn't apply for normals that have been taken directly
+    /// from the model file.
+    pub fn get_normals(&self) -> Option<&[Vector3D]> {
+        if self.normals.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.normals, self.num_vertices as uint)) }
     }
 
-    pub fn get_tangents(&self) -> &[Vector3D] {
-        unsafe { ptr_to_slice(self.tangents, self.num_vertices as uint) }
+    /// Vertex tangents.
+    ///
+    /// The tangent of a vertex points in the direction of the positive
+    /// X texture axis. The array contains normalized vectors. Returns
+    /// `None` if not present. The array is num_vertices in size. A mesh
+    /// consisting of points and lines only may not have tangent vectors.
+    /// Meshes with mixed primitive types (i.e. lines and triangles) may have
+    /// tangents, but the tangents for vertices that are only referenced by
+    /// point or line primitives are undefined and set to qNaN.  See the
+    /// normals member for a detailled discussion of qNaNs.
+    ///
+    /// Note: If the mesh contains tangents, it automatically also
+    /// contains bitangents.
+    pub fn get_tangents(&self) -> Option<&[Vector3D]> {
+        if self.tangents.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.tangents, self.num_vertices as uint)) }
     }
 
-    pub fn get_colors(&self) -> &[[Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS]] {
-        unsafe { ptr_to_slice(self.colors, self.num_vertices as uint) }
+    /// Vertex bitangents.
+    ///
+    /// The bitangent of a vertex points in the direction of the positive
+    /// Y texture axis. The array contains normalized vectors, NULL if not
+    /// present. The array is num_vertices in size.
+    ///
+    /// Note: If the mesh contains tangents, it automatically also contains
+    /// bitangents.
+    pub fn get_bitangents(&self) -> Option<&[Vector3D]> {
+        if self.bitangents.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.bitangents, self.num_vertices as uint)) }
     }
 
-    pub fn get_texure_coords(&self) -> &[[Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS]] {
-        unsafe { ptr_to_slice(self.texture_coords, self.num_vertices as uint) }
+    /// Vertex color sets.
+    ///
+    /// A mesh may contain 0 to `AI_MAX_NUMBER_OF_COLOR_SETS` vertex colors per
+    /// vertex. `None` if not present. Each array is num_vertices in size if
+    /// present.
+    pub fn get_colors(&self) -> Option<&[[Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS]]> {
+        if self.colors.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.colors, self.num_vertices as uint)) }
     }
 
+    /// Vertex texture coords, also known as UV channels.
+    ///
+    /// A mesh may contain 0 to `AI_MAX_NUMBER_OF_TEXTURECOORDS` per
+    /// vertex. `None` if not present. The array is num_vertices in size.
+    pub fn get_texure_coords(&self) -> Option<&[[Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS]]> {
+        if self.texture_coords.is_null() { return None; }
+        unsafe { Some(ptr_to_slice(self.texture_coords, self.num_vertices as uint)) }
+    }
+
+    /// The faces the mesh is constructed from.
+    ///
+    /// Each face refers to a number of vertices by their indices.
+    /// This array is always present in a mesh.
+    /// If the `SceneFlags_NON_VERBOSE_FORMAT` is *not* set each face references
+    /// an unique set of vertices.
     pub fn get_faces(&self) -> &[Face] {
         unsafe { ptr_to_slice(self.faces, self.num_faces as uint) }
     }
 
-    pub fn get_bones(&self) -> &[&Bone] {
-        unsafe { ptr_ptr_to_slice(self.bones, self.num_bones as uint) }
+    /// The bones of this mesh.
+    ///
+    /// A bone consists of a name by which it can be found in the frame
+    /// hierarchy and a set of vertex weights.
+    pub fn get_bones(&self) -> Option<&[&Bone]> {
+        if self.bones.is_null() { return None; }
+        unsafe { Some(ptr_ptr_to_slice(self.bones, self.num_bones as uint)) }
     }
 }

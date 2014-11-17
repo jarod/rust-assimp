@@ -18,6 +18,7 @@ type FileCloseProc = extern fn (*mut AiFileIO, *mut AiFile);
 /// Seek origins (for the virtual file system API).
 ///
 #[repr(C)]
+#[allow(dead_code)]
 pub enum Origin {
     /// Beginning of the file 
     Origin_SET = 0x0,
@@ -36,6 +37,7 @@ pub enum Origin {
 /// Use custom file systems to enable reading from other sources, such as ZIPs
 /// or memory locations.
 #[repr(C)]
+#[allow(dead_code)]
 pub struct AiFileIO {
     /// Function used to open a new file
     open: FileOpenProc,

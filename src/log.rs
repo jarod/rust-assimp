@@ -9,15 +9,22 @@ use ffi;
 use ffi::{DefaultLogStream_FILE, DefaultLogStream_STDOUT,
           DefaultLogStream_STDERR, DefaultLogStream_DEBUGGER };
 
+/// Default logging options for assimp
 pub enum LogStream<'a> {
+    /// Log to stdout
     LogStreamStdout,
+    /// Log to stderr
     LogStreamStderr,
+    /// MSVC only: Stream the log to the debugger
+    /// (this relies on OutputDebugString from the Win32 SDK)
     LogStreamDebugger,
+    /// Log to the given file
     LogStreamFile(&'a str),
+    /// Log to the given writer
     LogStreamCustom(&'a mut Writer+'a)
 }
 
-// TODO
+// TODO//{{{
 // pub struct Logger {
 //     log: Vec<LogStream>
 // }
@@ -43,14 +50,17 @@ pub enum LogStream<'a> {
 //         let cstr = CString::new(msg, false);
 //         (*stream).write(cstr.as_bytes()).unwrap();
 //     }
-// }
+// }//}}}
 
+/// Enable/Disable verbose logging for all log streams
 pub fn enable_verbose_logging(choice: bool) {
     unsafe {
         ffi::aiEnableVerboseLogging(AiBool::new(choice))
     }
 }
 
+/// Attach a log stream to assimp. Multiple log streams may be attach
+/// simultaneously
 pub fn add_log_stream(log_type: LogStream) {
     unsafe {
         let null = ptr::null();
@@ -77,6 +87,7 @@ pub fn add_log_stream(log_type: LogStream) {
     }
 }
 
+/// Closes all log streams
 pub fn detach_all_log_streams() {
     unsafe {
         ffi::aiDetachAllLogStreams();

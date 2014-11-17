@@ -9,13 +9,13 @@ use libc::{c_uchar, c_char, c_uint};
 
 use util::{ptr_to_slice};
 
-    // /// @def AI_MAKE_EMBEDDED_TEXNAME
-    // ///
-    // /// Used to build the reserved path name used by the material system to
-    // /// reference textures that are embedded into their corresponding
-    // /// model files. The parameter specifies the index of the texture
-    // /// (zero-based, in the aiScene::mTextures array)
-    // ///
+// /// @def AI_MAKE_EMBEDDED_TEXNAME
+// ///
+// /// Used to build the reserved path name used by the material system to
+// /// reference textures that are embedded into their corresponding
+// /// model files. The parameter specifies the index of the texture
+// /// (zero-based, in the aiScene::mTextures array)
+// ///
 // #if (!defined AI_MAKE_EMBEDDED_TEXNAME)
 // #	define AI_MAKE_EMBEDDED_TEXNAME(_n_) "*" # _n_
 // #endif
@@ -24,21 +24,27 @@ use util::{ptr_to_slice};
 /// Helper structure to represent a texel in a ARGB8888 format
 #[repr(C, packed)]
 pub struct Texel {
+    /// blue
     b: c_uchar,
+    /// green
     g: c_uchar,
+    /// red
     r: c_uchar,
+    /// alpha
     a: c_uchar,
 }
 
-    /** Helper structure to describe an embedded texture
-     *
-     * Normally textures are contained in external files but some file formats embed
-     * them directly in the model file. There are two types of embedded textures:
-     * 1. Uncompressed textures. The color data is given in an uncompressed format.
-     * 2. Compressed textures stored in a file format like png or jpg. The raw file
-     * bytes are given so the application must utilize an image decoder (e.g. DevIL) to
-     * get access to the actual color data.
-     */
+///  Helper structure to describe an embedded texture
+///
+/// Normally textures are contained in external files but some file formats
+/// embed them directly in the model file. There are two types of embedded
+/// textures:
+///
+/// 1. Uncompressed textures. The color data is given in an uncompressed
+///    format.
+/// 2. Compressed textures stored in a file format like png or jpg. The raw
+///    file bytes are given so the application must utilize an image decoder
+///    to get access to the actual color data.
 #[repr(C)] // not packed
 pub struct Texture {
     /// Width of the texture, in pixels
@@ -79,27 +85,41 @@ pub struct Texture {
     pc_data: *mut Texel
 }
 
+/// Texture data can be encoded or decoded
 pub enum TextureData<'a> {
+    /// Encoded texture data
     Encoded {
+        /// The length of the texture data in bytes
         pub len: u32,
-        pub data: &'a [Texel],
+        /// The encoded texture data
+        pub data: &'a [u8],
     },
+    /// Decoded texture data
     Decoded {
+        /// The width of the texture data in texels
         pub width: u32,
+        /// The height of the texture data in texels
         pub height: u32,
+        /// A linear array store the texels in the texture
         pub data: &'a [Texel]
     },
 }
 
 impl Texture {
+    /// Get the embeded texture data
     pub fn get_texture_data(&self) -> TextureData {
-        let data = unsafe { ptr_to_slice(self.pc_data, self.width as uint) };
         if self.height == 0 {
+            let data = unsafe {
+                ptr_to_slice(self.pc_data as *mut u8, self.width as uint)
+            };
             Encoded {
                 len: self.width,
                 data: data,
             }
         } else {
+            let data = unsafe {
+                ptr_to_slice(self.pc_data, (self.width * self.height) as uint)
+            };
             Decoded {
                 width: self.width,
                 height: self.height,

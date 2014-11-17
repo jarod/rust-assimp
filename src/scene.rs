@@ -14,7 +14,6 @@ use util::{ptr_ptr_to_slice, ptr_to_slice};
 use postprocess::PostProcessSteps;
 use ffi;
 
-
 /// A node in the imported hierarchy.
 ///
 /// Each node has name, a parent node (except for the root node),
@@ -28,7 +27,7 @@ pub struct Node {
     /// The name might be empty (length of zero) but all nodes which
     /// need to be accessed afterwards by bones or anims are usually named.
     /// Multiple nodes may have the same name, but nodes which are accessed
-    /// by bones (see #aiBone and #aiMesh::mBones) *must* be unique.
+    /// by bones (see `Bone` and `Mesh::bones`) *must* be unique.
     ///
     /// Cameras and lights are assigned to a specific node name - if there
     /// are multiple nodes with this name, they're assigned to each of them.
@@ -36,7 +35,6 @@ pub struct Node {
     /// There are no limitations regarding the characters contained in
     /// this text. You should be able to handle stuff like whitespace, tabs,
     /// linefeeds, quotation marks, ampersands, ... .
-    ///
     pub name: AiString,
 
     /// The transformation relative to the node's parent.
@@ -70,19 +68,24 @@ impl Node {
         }
     }
 
+    /// Get the childern of this node
     pub fn get_children(&self) -> &[&Node] {
         unsafe { ptr_ptr_to_slice(self.children, self.num_children as uint) }
     }
 
+    /// Get the meshes of this node. Each entry is an index into the mesh.
     pub fn get_meshes(&self) -> &[u32] {
         unsafe { ptr_to_slice(self.meshes, self.num_meshes as uint) }
     }
 }
 
+
+/// Flags to check the completeness of an imported scene.
 #[deriving(Show)]
 #[repr(C, u32)]
 pub enum SceneFlags {
-    /// Specifies that the scene data structure that was imported is not complete.
+    /// Specifies that the scene data structure that was imported is not
+    /// complete.
     ///
     /// This flag bypasses some internal validations and allows the import
     /// of animation skeletons, material libraries or camera animation paths
@@ -96,35 +99,37 @@ pub enum SceneFlags {
     ///  data structure (e.g.  vertex indices) are valid.
     SceneFlags_VALIDATED = 0x2,
 
-    /// This flag is set by the validation postprocess-step if the validation is
-    /// successful but some issues have been found.
+    /// This flag is set by the validation postprocess-step if the validation
+    /// is successful but some issues have been found.
     ///
-    /// This can for example mean that a texture that does not exist is referenced
-    /// by a material or that the bone weights for a vertex don't sum to 1.0 ... .
-    /// In most cases you should still be able to use the import. This flag could
-    /// be useful for applications which don't capture Assimp's log output.
+    /// This can for example mean that a texture that does not exist is
+    /// referenced by a material or that the bone weights for a vertex don't
+    /// sum to 1.0 ... .  In most cases you should still be able to use the
+    /// import. This flag could be useful for applications which don't capture
+    /// Assimp's log output.
     SceneFlags_VALIDATION_WARNING = 0x4,
 
-    /// This flag is currently only set by the aiProcess_JoinIdenticalVertices step.
+    /// This flag is currently only set by the aiProcess_JoinIdenticalVertices
+    /// step.
     ///
-    /// It indicates that the vertices of the output meshes aren't in the internal
-    /// verbose format anymore. In the verbose format all vertices are unique,
-    /// no vertex is ever referenced by more than one face.
+    /// It indicates that the vertices of the output meshes aren't in the
+    /// internal verbose format anymore. In the verbose format all vertices
+    /// are unique, no vertex is ever referenced by more than one face.
     SceneFlags_NON_VERBOSE_FORMAT = 0x8,
 
     /// Denotes pure height-map terrain data.
     ///
-    /// Pure terrains usually consist of quads, sometimes triangles, in a regular
-    /// grid. The x,y coordinates of all vertex positions refer to the x,y
-    /// coordinates on the terrain height map, the z-axis stores the elevation at
-    /// a specific point.
+    /// Pure terrains usually consist of quads, sometimes triangles, in a
+    /// regular grid. The x,y coordinates of all vertex positions refer to the
+    /// x,y coordinates on the terrain height map, the z-axis stores the
+    /// elevation at a specific point.
     ///
     /// TER (Terragen) and HMP (3D Game Studio) are height map formats.
     ///
-    /// Note: Assimp is probably not the best choice for loading *huge* terrains
-    /// - fully triangulated data takes extremely much free store and should be
-    /// avoided as long as possible (typically you'll do the triangulation when
-    /// you actually need to render it).
+    /// Note: Assimp is probably not the best choice for loading *huge*
+    /// terrains - fully triangulated data takes extremely much free store and
+    /// should be avoided as long as possible (typically you'll do the
+    /// triangulation when you actually need to render it).
     SceneFlags_TERRAIN = 0x10,
 }
 
@@ -218,9 +223,10 @@ pub struct RawScene {
 ///
 /// Everything that was imported from the given file can be accessed from here.
 pub struct Scene<'a> {
-    // Note we use this struct to wrap the RawScene so that we
-    // can aiReleaseImport gets dropped.
+    /// Note we use this struct to wrap the RawScene so that we
+    /// can aiReleaseImport gets dropped.
     raw_scene: &'a RawScene,
+
     /// Any combination of the flags in scene::SceneFlags.
     ///
     /// By default this value is 0, no flags are set. Most applications will
@@ -249,14 +255,8 @@ pub struct Scene<'a> {
 }
 
 impl<'a> Scene<'a> {
-    pub fn from_file(fname: &str, flags: c_uint) -> Scene {
-        // TODO FIXME DONT FORGET, CHECK RESULTS!!!! FIXME TODO
-        unsafe {
-            let raw = fname.with_c_str(|s| ffi::aiImportFile(s, flags) );
-            Scene::from_raw_scene(raw)
-        }
-    }
-
+    //TODO hide this from the user
+    /// Internal use only
     pub unsafe fn from_raw_scene(raw: *const RawScene) -> Scene<'a> {
         let raw = &*raw;
         Scene {
@@ -269,6 +269,13 @@ impl<'a> Scene<'a> {
             num_lights: raw.num_lights,
             num_cameras: raw.num_cameras,
         }
+    }
+
+    /// Check if the given scene flag is set
+    ///
+    /// See `SceneFlags`
+    pub fn check_flag(&self, flag: SceneFlags) -> bool {
+        (self.flags & flag as u32) != 0
     }
 
     /// Get the root node of the hierarchy.
@@ -323,7 +330,7 @@ impl<'a> Scene<'a> {
     /// Get the array of materials.
     ///
     /// Use the index given in each Mesh structure to access this
-    /// array. If the SceneFlags_INCOMPLETE flag is not set there will
+    /// array. If the `SceneFlags_INCOMPLETE` flag is not set there will
     /// always be at least ONE material.
     pub fn get_materials(&self) -> &[&Material] {
         unsafe { ptr_ptr_to_slice(self.raw_scene.materials,
@@ -340,6 +347,9 @@ impl<'a> Scene<'a> {
                                   self.raw_scene.num_textures as uint) }
     }
 
+    /// Get the amount of memory used to store this scene.
+    ///
+    /// The result is a `MemoryInfo` where all fields use bytes as units.
     pub fn get_memory_info(&self) -> MemoryInfo {
         unsafe {
             let mut mem_info = mem::zeroed();
@@ -348,14 +358,27 @@ impl<'a> Scene<'a> {
         }
     }
 
+    /// Apply post-processing to an already-imported scene.
+    ///
+    /// This is the same as if the options where set using the `Importer`
+    /// except you can inspect the `Scene` before hand to fine-tune your
+    /// post-processing setup.
+    ///
+    /// # Parameters
+    ///
+    /// * `steps` A list of post processing steps to perform on the `Scene`.
+    ///
+    /// This process can fail if using `Process_ValidateDS` in which case an
+    /// error is returned and further usage of the scene is invalid.
     pub fn apply_postprocessing(&mut self,
-                                flags: &[PostProcessSteps])
+                                steps: &[PostProcessSteps])
                                 -> Result<(), &str> {
         unsafe {
-            let flags = flags.iter().fold(0, |x, &y| x | y as u32);
+            let flags = steps.iter().fold(0, |x, &y| x | y as u32);
             let scene = ffi::aiApplyPostProcessing(self.raw_scene,
                                                    flags);
             if scene.is_null() {
+                //TODO: invalidate the scene
                 Err("Post processing failed")
             } else {
                 Ok(())
@@ -367,9 +390,26 @@ impl<'a> Scene<'a> {
 #[unsafe_destructor]
 impl<'a> Drop for Scene<'a> {
     fn drop(&mut self) {
+        // NOTE: it's okay to call this on a scene returned by aiCopyScene
+        // based on comments in the assimp source code
         unsafe { ffi::aiReleaseImport(mem::transmute(self.raw_scene)) }
     }
 }
+
+
+// impl<'a> Clone for Scene<'a> {
+//     fn clone(&self) -> Scene<'a> {
+//         unsafe {
+//             let raw_copy : *mut*mut RawScene= ptr::null_mut();
+//             ffi::aiCopyScene(self.raw_scene, raw_copy);
+//             if raw_copy.is_null() {
+//                 panic!("failed to clone scene")
+//             } else {
+//                 Scene::from_raw_scene(*raw_copy)
+//             }
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod test {

@@ -202,7 +202,8 @@ impl Add<Quaternion, Quaternion> for Quaternion {
 }
 
 impl Quaternion {
-    fn from_matrix(mat: &Matrix3x3) -> Quaternion {
+    /// Creates a rotation quaternion from the given matrix
+    pub fn from_matrix(mat: &Matrix3x3) -> Quaternion {
         let mut quat: Quaternion = Quaternion::zero();
         unsafe {
             ffi::aiCreateQuaternionFromMatrix(&mut quat, mat);
@@ -215,18 +216,18 @@ impl Quaternion {
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Matrix3x3 {
-    a1: c_float, a2: c_float, a3: c_float,
-    b1: c_float, b2: c_float, b3: c_float,
-    c1: c_float, c2: c_float, c3: c_float,
+    pub a1: c_float, pub a2: c_float, pub a3: c_float,
+    pub b1: c_float, pub b2: c_float, pub b3: c_float,
+    pub c1: c_float, pub c2: c_float, pub c3: c_float,
 }
 
 /// Represents a 4x4 matrix.
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Matrix4x4 {
-    a1: c_float, a2: c_float, a3: c_float, a4: c_float,
-    b1: c_float, b2: c_float, b3: c_float, b4: c_float,
-    c1: c_float, c2: c_float, c3: c_float, c4: c_float,
-    d1: c_float, d2: c_float, d3: c_float, d4: c_float,
+    pub a1: c_float, pub a2: c_float, pub a3: c_float, pub a4: c_float,
+    pub b1: c_float, pub b2: c_float, pub b3: c_float, pub b4: c_float,
+    pub c1: c_float, pub c2: c_float, pub c3: c_float, pub c4: c_float,
+    pub d1: c_float, pub d2: c_float, pub d3: c_float, pub d4: c_float,
 }
 

@@ -56,14 +56,14 @@ pub enum AnimBehaviour {
     /// The nearest key value is used without interpolation
     AnimBehaviour_CONSTANT = 0x1,
 
-    /// The value of the nearest two keys is linearly extrapolated 
+    /// The value of the nearest two keys is linearly extrapolated
     /// for the current time value.
     AnimBehaviour_LINEAR   = 0x2,
 
     /// The animation is repeated.
     ///
     /// If the animation key go from n to m and the current
-    /// time is t, use the value at (t-n) % (|m-n|).
+    /// time is `t`, use the value at `(t-n) % (|m-n|)`.
     AnimBehaviour_REPEAT   = 0x3,
 }
 
@@ -136,14 +136,29 @@ pub struct NodeAnim {
 }
 
 impl NodeAnim {
+    /// The rotation keys of this animation channel. Rotations are
+    /// given as quaternions, which are 4D vectors.
+    ///
+    /// If there are rotation keys, there will also be at least one
+    /// scaling and one position key.
     pub fn get_rotation_keys(&self) -> &[QuatKey] {
         unsafe { ptr_to_slice(self.rotation_keys, self.num_rotation_keys as uint) }
     }
 
+    /// The position keys of this animation channel. Positions are
+    /// specified as 3D vector.
+    ///
+    /// If there are position keys, there will also be at least one
+    /// scaling and one rotation key.
     pub fn get_position_keys(&self) -> &[VectorKey] {
         unsafe { ptr_to_slice(self.position_keys, self.num_position_keys as uint) }
     }
 
+    /// The scaling keys of this animation channel. Scalings are
+    /// specified as 3D vector.
+    ///
+    /// If there are scaling keys, there will also be at least one
+    /// position and one rotation key.
     pub fn get_scaling_keys(&self) -> &[VectorKey] {
         unsafe { ptr_to_slice(self.scaling_keys, self.num_scaling_keys as uint) }
     }
@@ -171,6 +186,7 @@ pub struct MeshAnim {
 }
 
 impl MeshAnim {
+    /// Key frames of the animation. Must be at least 1
     pub fn get_keys(&self) -> &[MeshKey] {
         unsafe { ptr_to_slice(self.keys, self.num_keys as uint) }
     }
@@ -210,10 +226,12 @@ pub struct Animation {
 }
 
 impl Animation {
+    /// The node animation channels. Each channel affects a single node.
     pub fn get_channels(&self) -> &[&NodeAnim] {
         unsafe { ptr_ptr_to_slice(self.channels, self.num_channels as uint) }
     }
 
+    /// The mesh animation channels. Each channel affects a single mesh.
     pub fn get_mesh_channels(&self) -> &[&MeshAnim] {
         unsafe { ptr_ptr_to_slice(self.mesh_channels,
                                   self.num_mesh_channels as uint) }

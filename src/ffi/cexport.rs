@@ -3,7 +3,8 @@
 use libc::{c_char, size_t, c_uint, c_void};
 
 use types::{AiString, Return};
-use scene::{RawScene};
+// use ffi::rawscene::RawScene;
+use scene::RawScene;
 use fileio::{AiFileIO};
 
 /// Describes an file format which Assimp can export to.
@@ -78,7 +79,7 @@ extern {
     /// Assimp build.
     /// Use aiGetExportFormatDescription() to retrieve infos of a specific
     /// export format.
-    fn aiGetExportFormatCount() -> size_t;
+    pub fn aiGetExportFormatCount() -> size_t;
 
     /// Returns a description of the nth export file format.
     ///
@@ -92,7 +93,7 @@ extern {
     ///
     /// Return a description of that specific export format. NULL if index
     /// is out of range.
-    fn aiGetExportFormatDescription(index: size_t) -> *const ExportFormatDesc;
+    pub fn aiGetExportFormatDescription(index: size_t) -> *const ExportFormatDesc;
 
     ///  Create a modifyable copy of a scene.
     ///
@@ -104,7 +105,7 @@ extern {
     ///
     /// * `in` Valid scene to be copied
     /// * `out` Receives a modifyable copy of the scene.
-    fn aiCopyScene(input: *const RawScene, output: *mut*mut RawScene);
+    pub fn aiCopyScene(input: *const RawScene, output: *mut*mut RawScene);
 
     /// Exports the given scene to a chosen file format and writes the result
     /// file(s) to disk.
@@ -156,7 +157,7 @@ extern {
     ///      run the step anyway.
     ///
     /// Returns a status code indicating the result of the export
-    fn aiExportScene( scene: *const RawScene,
+    pub fn aiExportScene( scene: *const RawScene,
                       formatId: *const c_char,
                       file_name: *const c_char,
                       preprocessing: c_uint)
@@ -167,7 +168,7 @@ extern {
     /// returned by aiExportScene().
     ///
     /// data the data blob returned by #aiExportSceneToBlob
-    fn aiReleaseExportBlob(data: *const RawExportDataBlob);
+    pub fn aiReleaseExportBlob(data: *const RawExportDataBlob);
 
 
     /// Exports the given scene to a chosen file format using custom IO logic supplied by you.
@@ -181,7 +182,7 @@ extern {
     /// * pPreprocessing Please see the documentation for #aiExportScene
     ///
     /// Returns a status code indicating the result of the export
-    fn aiExportSceneEx( scene: *const RawScene,
+    pub fn aiExportSceneEx( scene: *const RawScene,
                         format_id: *const c_char,
                         file_name: *const c_char,
                         file_io: *mut AiFileIO,
@@ -200,7 +201,7 @@ extern {
     ///  which export formats are available.  @param pPreprocessing Please see
     ///  the documentation for #aiExportScene @return the exported data or
     ///  NULL in case of error
-    fn aiExportSceneToBlob( scene: *const RawScene,
+    pub fn aiExportSceneToBlob( scene: *const RawScene,
                             format_id: *const c_char,
                             preprocessing: c_uint )
                             -> *const RawExportDataBlob;

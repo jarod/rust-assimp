@@ -197,7 +197,7 @@ pub enum TextureType {
     TextureType_UNKNOWN = 0xC,
 }
 
-const AI_TEXTURE_TYPE_MAX : u32 = TextureType_UNKNOWN as u32;
+pub const AI_TEXTURE_TYPE_MAX : u32 = TextureType_UNKNOWN as u32;
 
 /// Defines all shading models supported by the library
 ///
@@ -396,7 +396,7 @@ pub struct MaterialProperty {
     /// Textures: Specifies their exact usage semantic.
     ///
     /// For non-texture properties, this member is always 0
-    /// (or, better-said, #aiTextureType_NONE).
+    /// (or, better-said, `TextureType_NONE`).
     pub semantic: c_uint,
 
     /// Textures: Specifies the index of the texture.
@@ -422,7 +422,10 @@ pub struct MaterialProperty {
     data: *mut c_uchar,
 }
 
+//TODO handle this in a rusty way
 impl MaterialProperty {
+    ///	Get a binary buffer that holds the property's value.
+    /// The size of the buffer is always data_length.
     pub fn get_data(&self) -> &[u8] {
         unsafe { ptr_to_slice(self.data, self.data_length as uint) }
     }
@@ -437,17 +440,18 @@ impl MaterialProperty {
 /// The library defines a set of standard keys (AI_MATKEY_XXX).
 #[repr(C)]
 pub struct Material {
-    /// List of all material properties loaded. */
+    /// List of all material properties loaded.
     properties: *mut*mut MaterialProperty,
 
-    /// Number of properties in the data base */
+    /// Number of properties in the data base.
     pub num_properties: c_uint,
 
-    /// Storage allocated */
-    num_allocated: c_uint,
+    /// Storage allocated
+    pub num_allocated: c_uint,
 }
 
 impl Material {
+    /// Get list of all material properties loaded.
     pub fn get_properties(&self) -> &[&MaterialProperty] {
         unsafe { ptr_ptr_to_slice(self.properties, self.num_properties as uint) }
     }
