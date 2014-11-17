@@ -1,6 +1,7 @@
 //! Declares the data structures used for imported geometry.
 
 use libc::{c_uint, c_float};
+use std::fmt;
 
 use types::{Vector3D, Color4D, Matrix4x4, AiString};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
@@ -157,10 +158,10 @@ pub struct AnimMesh {
     bitangents: *mut Vector3D,
 
     /// Replacement for Mesh colors
-    colors: *mut [Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
+    colors: [*mut Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
 
     /// Replacement for Mesh texture_coords
-    texture_coords: *mut [Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    texture_coords: [*mut Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
 
     /// The number of vertices in the AnimMesh, and thus the length of all
     /// the member arrays.
@@ -203,15 +204,41 @@ impl AnimMesh {
     }
 
     /// Replacement for Mesh colors
-    pub fn get_colors(&self) -> Option<&[[Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS]]> {
-        if self.colors.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.colors, self.num_vertices as uint)) }
+    pub fn get_colors(&self) -> Option<Vec<&[Color4D]>> {
+        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+
+        for i in range(0u, AI_MAX_NUMBER_OF_COLOR_SETS) {
+            if self.colors[i].is_null() { continue; }
+            unsafe {
+                list.push(ptr_to_slice(self.colors[i],
+                                       self.num_vertices as uint));
+            }
+        }
+
+        if list.len() == 0 {
+            None
+        } else {
+            Some(list)
+        }
     }
 
     /// Replacement for Mesh texture_coords
-    pub fn get_texure_coords(&self) -> Option<&[[Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS]]> {
-        if self.texture_coords.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.texture_coords, self.num_vertices as uint)) }
+    pub fn get_texure_coords(&self) -> Option<Vec<&[Vector3D]>> {
+        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+
+        for i in range(0u, AI_MAX_NUMBER_OF_TEXTURECOORDS) {
+            if self.texture_coords[i].is_null() { continue; }
+            unsafe {
+                list.push(ptr_to_slice(self.texture_coords[i],
+                                       self.num_vertices as uint));
+            }
+        }
+
+        if list.len() == 0 {
+            None
+        } else {
+            Some(list)
+        }
     }
 }
 
@@ -312,13 +339,13 @@ pub struct Mesh {
     /// A mesh may contain 0 to #AI_MAX_NUMBER_OF_COLOR_SETS vertex colors per
     /// vertex. NULL if not present. Each array is num_vertices in size if
     /// present.
-    colors: *mut [Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
+    colors: [*mut Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
 
     /// Vertex texture coords, also known as UV channels.
     ///
     /// A mesh may contain 0 to AI_MAX_NUMBER_OF_TEXTURECOORDS per
     /// vertex. NULL if not present. The array is mNumVertices in size.
-    texture_coords: *mut [Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    texture_coords: [*mut Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
 
     /// Specifies the number of components for a given UV channel.
     ///
@@ -383,6 +410,11 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    /// Check if the mesh has a given primitive type
+    pub fn has_primitive(&self, prim: PrimitiveType) -> bool {
+        (self.primitive_types & prim as u32) != 0
+    }
+
     /// Vertex positions.
     ///
     /// This array is always present in a mesh. The array is
@@ -454,18 +486,44 @@ impl Mesh {
     /// A mesh may contain 0 to `AI_MAX_NUMBER_OF_COLOR_SETS` vertex colors per
     /// vertex. `None` if not present. Each array is num_vertices in size if
     /// present.
-    pub fn get_colors(&self) -> Option<&[[Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS]]> {
-        if self.colors.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.colors, self.num_vertices as uint)) }
+    pub fn get_colors(&self) -> Option<Vec<&[Color4D]>> {
+        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+
+        for i in range(0u, AI_MAX_NUMBER_OF_COLOR_SETS) {
+            if self.colors[i].is_null() { continue; }
+            unsafe {
+                list.push(ptr_to_slice(self.colors[i],
+                                       self.num_vertices as uint));
+            }
+        }
+
+        if list.len() == 0 {
+            None
+        } else {
+            Some(list)
+        }
     }
 
     /// Vertex texture coords, also known as UV channels.
     ///
     /// A mesh may contain 0 to `AI_MAX_NUMBER_OF_TEXTURECOORDS` per
     /// vertex. `None` if not present. The array is num_vertices in size.
-    pub fn get_texure_coords(&self) -> Option<&[[Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS]]> {
-        if self.texture_coords.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.texture_coords, self.num_vertices as uint)) }
+    pub fn get_texure_coords(&self) -> Option<Vec<&[Vector3D]>> {
+        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+
+        for i in range(0u, AI_MAX_NUMBER_OF_TEXTURECOORDS) {
+            if self.texture_coords[i].is_null() { continue; }
+            unsafe {
+                list.push(ptr_to_slice(self.texture_coords[i],
+                                       self.num_vertices as uint));
+            }
+        }
+
+        if list.len() == 0 {
+            None
+        } else {
+            Some(list)
+        }
     }
 
     /// The faces the mesh is constructed from.
@@ -485,5 +543,22 @@ impl Mesh {
     pub fn get_bones(&self) -> Option<&[&Bone]> {
         if self.bones.is_null() { return None; }
         unsafe { Some(ptr_ptr_to_slice(self.bones, self.num_bones as uint)) }
+    }
+}
+
+impl fmt::Show for Mesh {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "Mesh {{ name: {}, primitive_types:", self.name,));
+
+        if self.has_primitive(Point) { try!(write!(f, " Point")) }
+        if self.has_primitive(Line) { try!(write!(f, " Line")) }
+        if self.has_primitive(Triangle) { try!(write!(f, " Triangle")) }
+        if self.has_primitive(Polygon) { try!(write!(f, " Polygon")) }
+
+        write!(f, ", num_vertices: {}, num_faces: {}, num_bones: {}, material_index: {} }}",
+        self.num_vertices,
+        self.num_faces,
+        self.num_bones,
+        self.material_index)
     }
 }

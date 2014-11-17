@@ -1,6 +1,7 @@
 //! Data structures for handling animation
 
 use libc::{c_double, c_uint};
+use std::fmt;
 
 use util::{ptr_ptr_to_slice, ptr_to_slice};
 use types::{Vector3D, Quaternion, AiString};
@@ -235,5 +236,22 @@ impl Animation {
     pub fn get_mesh_channels(&self) -> &[&MeshAnim] {
         unsafe { ptr_ptr_to_slice(self.mesh_channels,
                                   self.num_mesh_channels as uint) }
+    }
+}
+
+impl fmt::Show for Animation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Animation {{
+        name: {},
+        duration: {},
+        ticks_per_sec: {},
+        num_channels: {},
+        num_mesh_channels: {}
+        }}",
+        self.name,
+        self.duration,
+        self.ticks_per_sec,
+        self.num_channels,
+        self.num_mesh_channels)
     }
 }

@@ -2,6 +2,7 @@
 
 use libc::{c_uint, c_void};
 use std::mem;
+use std::fmt;
 
 use animation::Animation;
 use camera::Camera;
@@ -384,6 +385,25 @@ impl<'a> Scene<'a> {
                 Ok(())
             }
         }
+    }
+}
+
+impl<'a> fmt::Show for Scene<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Scene {{
+        num_meshes: {},
+        num_materials: {},
+        num_animations: {},
+        num_textures: {},
+        num_lights: {},
+        num_cameras: {}
+        }}",
+        self.num_meshes,
+        self.num_materials,
+        self.num_animations,
+        self.num_textures,
+        self.num_lights,
+        self.num_cameras,)
     }
 }
 
