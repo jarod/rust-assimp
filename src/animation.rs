@@ -52,20 +52,20 @@ pub struct MeshKey {
 #[repr(C)]
 pub enum AnimBehaviour {
     /// The value from the default node transformation is taken
-    AnimBehaviour_DEFAULT  = 0x0,
+    Default  = 0x0,
 
     /// The nearest key value is used without interpolation
-    AnimBehaviour_CONSTANT = 0x1,
+    Constant = 0x1,
 
     /// The value of the nearest two keys is linearly extrapolated
     /// for the current time value.
-    AnimBehaviour_LINEAR   = 0x2,
+    Linear   = 0x2,
 
     /// The animation is repeated.
     ///
     /// If the animation key go from n to m and the current
     /// time is `t`, use the value at `(t-n) % (|m-n|)`.
-    AnimBehaviour_REPEAT   = 0x3,
+    Repeat   = 0x3,
 }
 
 /// Describes the animation of a single node.

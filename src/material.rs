@@ -31,22 +31,22 @@ use util::{ptr_ptr_to_slice, ptr_to_slice};
 #[repr(C)]
 pub enum TextureOp {
     /// T = T1 * T2
-    TextureOp_Multiply = 0x0,
+    Multiply = 0x0,
 
     /// T = T1 + T2
-    TextureOp_Add = 0x1,
+    Add = 0x1,
 
     /// T = T1 - T2
-    TextureOp_Subtract = 0x2,
+    Subtract = 0x2,
 
     /// T = T1 / T2
-    TextureOp_Divide = 0x3,
+    Divide = 0x3,
 
     /// T = (T1 + T2) - (T1 * T2)
-    TextureOp_SmoothAdd = 0x4,
+    SmoothAdd = 0x4,
 
     /// T = T1 + (T2-0.5)
-    TextureOp_SignedAdd = 0x5,
+    SignedAdd = 0x5,
 }
 
 /// Defines how UV coordinates outside the [0...1] range are handled.
@@ -56,21 +56,21 @@ pub enum TextureOp {
 #[repr(C)]
 pub enum TextureMapMode {
     /// A texture coordinate `(u, v)` is translated to `(u % 1, v % 1)`
-    TextureMapMode_Wrap = 0x0,
+    Wrap = 0x0,
 
     /// Texture coordinates outside [0...1] are clamped to the nearest valid
     /// value.
-    TextureMapMode_Clamp = 0x1,
+    Clamp = 0x1,
 
     /// If the texture coordinates for a pixel are outside [0...1]
     /// the texture is not applied to that pixel
-    TextureMapMode_Decal = 0x3,
+    Decal = 0x3,
 
     /// Mirrors a texture coordinate.
     ///
     /// A texture coordinate `(u, v)` becomes `(u % 1, v % 1)`
     /// if `(u - (u % 1)) % 2` is zero and `(1 - (u % 1), 1 - (v % 1))` otherwise
-    TextureMapMode_Mirror = 0x2,
+    Mirror = 0x2,
 }
 
 /// Defines how the mapping coords for a texture are generated.
@@ -88,22 +88,22 @@ pub enum TextureMapping {
     /// The #AI_MATKEY_UVWSRC key specifies from which UV channel
     /// the texture coordinates are to be taken from (remember,
     /// meshes can have more than one UV channel).
-    TextureMapping_UV = 0x0,
+    Uv = 0x0,
 
     /// Spherical mapping
-    TextureMapping_SPHERE = 0x1,
+    Sphere = 0x1,
 
     /// Cylindrical mapping
-    TextureMapping_CYLINDER = 0x2,
+    Cylinder = 0x2,
 
     /// Cubic mapping
-    TextureMapping_BOX = 0x3,
+    Cubic = 0x3,
 
     /// Planar mapping
-    TextureMapping_PLANE = 0x4,
+    Plane = 0x4,
 
     /// Undefined mapping. Have fun.
-    TextureMapping_OTHER = 0x5,
+    Other = 0x5,
 }
 
 /// Defines the purpose of a texture
@@ -127,33 +127,33 @@ pub enum TextureType {
     /// No texture, but the value to be used as 'texture semantic'
     /// (#MaterialProperty::mSemantic) for all material properties
     /// *not* related to textures.
-    TextureType_NONE = 0x0,
+    Null = 0x0,
 
     /// The texture is combined with the result of the diffuse lighting equation.
-    TextureType_DIFFUSE = 0x1,
+    Diffuse = 0x1,
 
     /// The texture is combined with the result of the specular lighting equation.
-    TextureType_SPECULAR = 0x2,
+    Specular = 0x2,
 
     /// The texture is combined with the result of the ambient lighting equation.
-    TextureType_AMBIENT = 0x3,
+    Ambient = 0x3,
 
     /// The texture is added to the result of the lighting calculation.
     ///
     /// It isn't influenced by incoming light.
-    TextureType_EMISSIVE = 0x4,
+    Emissive = 0x4,
 
     /// The texture is a height map.
     ///
     /// By convention, higher gray-scale values stand for
     /// higher elevations from the base height.
-    TextureType_HEIGHT = 0x5,
+    Height = 0x5,
 
     /// The texture is a (tangent space) normal-map.
     ///
     /// Again, there are several conventions for tangent-space
     /// normal maps. Assimp does (intentionally) not distinguish here.
-    TextureType_NORMALS = 0x6,
+    Normals = 0x6,
 
     /// The texture defines the glossiness of the material.
     ///
@@ -161,19 +161,19 @@ pub enum TextureType {
     /// (phong) lighting equation. Usually there is a conversion
     /// function defined to map the linear color values in the
     /// texture to a suitable exponent.
-    TextureType_SHININESS = 0x7,
+    Shininess = 0x7,
 
     /// The texture defines per-pixel opacity.
     ///
     /// Usually 'white' means opaque and 'black' means
     /// 'transparency'. Or quite the opposite. Have fun.
-    TextureType_OPACITY = 0x8,
+    Opacity = 0x8,
 
     /// Displacement texture
     ///
     /// The exact purpose and format is application-dependent.
     /// Higher color values stand for higher vertex displacements.
-    TextureType_DISPLACEMENT = 0x9,
+    Displacement = 0x9,
 
     /// Lightmap texture (aka Ambient Occlusion)
     ///
@@ -181,23 +181,23 @@ pub enum TextureType {
     /// covered by this material property. The texture contains a
     /// scaling value for the final color value of a pixel. Its
     /// intensity is not affected by incoming light.
-    TextureType_LIGHTMAP = 0xA,
+    Lightmap = 0xA,
 
     /// Reflection texture
     ///
     /// Contains the color of a perfect mirror reflection.
     /// Rarely used, almost never for real-time applications.
-    TextureType_REFLECTION = 0xB,
+    Reflection = 0xB,
 
     /// Unknown texture
     ///
     /// A texture reference that does not match any of the definitions
     /// above is considered to be 'unknown'. It is still imported,
     /// but is excluded from any further postprocessing.
-    TextureType_UNKNOWN = 0xC,
+    Unknown = 0xC,
 }
 
-pub const AI_TEXTURE_TYPE_MAX : u32 = TextureType_UNKNOWN as u32;
+pub const AI_TEXTURE_TYPE_MAX : u32 = TextureType::Unknown as u32;
 
 /// Defines all shading models supported by the library
 ///
@@ -216,40 +216,40 @@ pub enum ShadingMode {
     /// Flat shading. Shading is done on per-face base, diffuse only.
     ///
     /// Also known as 'faceted shading'.
-    ShadingMode_Flat = 0x1,
+    Flat = 0x1,
 
     /// Simple Gouraud shading.
-    ShadingMode_Gouraud =	0x2,
+    Gouraud =	0x2,
 
     /// Phong-Shading
-    ShadingMode_Phong = 0x3,
+    Phong = 0x3,
 
     /// Phong-Blinn-Shading
-    ShadingMode_Blinn	= 0x4,
+    Blinn	= 0x4,
 
     /// Toon-Shading per pixel. Also known as 'comic' shader.
-    ShadingMode_Toon = 0x5,
+    Toon = 0x5,
 
     /// OrenNayar-Shading per pixel
     ///
     /// Extension to standard Lambertian shading, taking the
     /// roughness of the material into account
-    ShadingMode_OrenNayar = 0x6,
+    OrenNayar = 0x6,
 
     /// Minnaert-Shading per pixel
     ///
     /// Extension to standard Lambertian shading, taking the "darkness"
     /// of the material into account
-    ShadingMode_Minnaert = 0x7,
+    Minnaert = 0x7,
 
     /// CookTorrance-Shading per pixel. Special shader for metallic surfaces.
-    ShadingMode_CookTorrance = 0x8,
+    CookTorrance = 0x8,
 
     /// No shading at all. Constant light influence of 1.0.
-    ShadingMode_NoShading = 0x9,
+    NoShading = 0x9,
 
     /// Fresnel shading
-    ShadingMode_Fresnel = 0xa,
+    Fresnel = 0xa,
 }
 
 /// Defines some mixed flags for a particular texture.
@@ -265,7 +265,7 @@ pub enum ShadingMode {
 #[repr(C)]
 pub enum TextureFlags {
     /// The texture's color values have to be inverted (componentwise 1-n)
-    TextureFlags_Invert = 0x1,
+    Invert = 0x1,
 
     /// Explicit request to the application to process the alpha channel
     /// of the texture.
@@ -275,13 +275,13 @@ pub enum TextureFlags {
     /// channel is used/is not used. If the model format does not
     /// define this, it is left to the application to decide whether
     /// the texture alpha channel - if any - is evaluated or not.
-    TextureFlags_UseAlpha = 0x2,
+    UseAlpha = 0x2,
 
     /// Explicit request to the application to ignore the alpha channel
     /// of the texture.
     ///
     /// Mutually exclusive with #aiTextureFlags_UseAlpha.
-    TextureFlags_IgnoreAlpha = 0x4,
+    IgnoreAlpha = 0x4,
 }
 
 
@@ -306,10 +306,10 @@ pub enum TextureFlags {
 #[repr(C)]
 pub enum BlendMode {
     /// Formula: `SourceColor*SourceAlpha + DestColor*(1-SourceAlpha)`
-    BlendMode_Default = 0x0,
+    Default = 0x0,
 
     /// Additive blending: `SourceColor*1 + DestColor*1`
-    BlendMode_Additive = 0x1,
+    Additive = 0x1,
 }
 
 /// Defines how an UV channel is transformed.
@@ -346,14 +346,14 @@ pub enum PropertyTypeInfo {
     /// It is possible to use aiGetMaterialInteger[Array]() (or the C++-API
     /// Material::Get()) to query properties stored in floating-point format.
     /// The material system performs the type conversion automatically.
-    PTI_Float   = 0x1,
+    PtiFloat   = 0x1,
 
     /// The material property is an AiString.
     ///
     /// Arrays of strings aren't possible, aiGetMaterialString() (or the
     /// C++-API aiMaterial::Get()) *must* be used to query a string property.
     ///
-    PTI_String  = 0x3,
+    PtiString  = 0x3,
 
     ///  Array of (32 Bit) integers
     ///
@@ -361,10 +361,10 @@ pub enum PropertyTypeInfo {
     /// aiMaterial::Get()) to query properties stored in integer format.
     /// The material system performs the type conversion automatically.
     ///
-    PTI_Integer = 0x4,
+    PtiInteger = 0x4,
 
     /// Simple binary buffer, content undefined. Not convertible to anything.
-    PTI_Buffer  = 0x5,
+    PtiBuffer  = 0x5,
 }
 
 /// Data structure for a single material property

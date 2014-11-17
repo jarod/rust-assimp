@@ -19,8 +19,8 @@ pub enum AiBool {
 impl AiBool {
     pub fn new(val: bool) -> AiBool {
         match val {
-            true => AiTrue,
-            false => AiFalse,
+            true => AiBool::AiTrue,
+            false => AiBool::AiFalse,
         }
     }
 }

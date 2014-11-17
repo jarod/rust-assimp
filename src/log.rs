@@ -6,22 +6,23 @@ use std::ptr;
 
 use types::AiBool;
 use ffi;
-use ffi::{DefaultLogStream_FILE, DefaultLogStream_STDOUT,
-          DefaultLogStream_STDERR, DefaultLogStream_DEBUGGER };
+
+pub use log::LogStream::{Stdout, Stderr, Debugger, File, Custom};
+
 
 /// Default logging options for assimp
 pub enum LogStream<'a> {
     /// Log to stdout
-    LogStreamStdout,
+    Stdout,
     /// Log to stderr
-    LogStreamStderr,
+    Stderr,
     /// MSVC only: Stream the log to the debugger
     /// (this relies on OutputDebugString from the Win32 SDK)
-    LogStreamDebugger,
+    Debugger,
     /// Log to the given file
-    LogStreamFile(&'a str),
+    File(&'a str),
     /// Log to the given writer
-    LogStreamCustom(&'a mut Writer+'a)
+    Custom(&'a mut Writer+'a)
 }
 
 // TODO//{{{
@@ -65,15 +66,15 @@ pub fn add_log_stream(log_type: LogStream) {
     unsafe {
         let null = ptr::null();
         let log = match log_type {
-            LogStreamFile(fname) => fname.with_c_str(|s|
-                ffi::aiGetPredefinedLogStream(DefaultLogStream_FILE, s) ),
-            LogStreamStdout =>
-                ffi::aiGetPredefinedLogStream(DefaultLogStream_STDOUT, null),
-            LogStreamStderr =>
-                ffi::aiGetPredefinedLogStream(DefaultLogStream_STDERR, null),
-            LogStreamDebugger =>
-                ffi::aiGetPredefinedLogStream(DefaultLogStream_DEBUGGER, null),
-            LogStreamCustom(_writer) => {
+            File(fname) => fname.with_c_str(|s|
+                ffi::aiGetPredefinedLogStream(ffi::DefaultLogStream_FILE, s) ),
+            Stdout =>
+                ffi::aiGetPredefinedLogStream(ffi::DefaultLogStream_STDOUT, null),
+            Stderr =>
+                ffi::aiGetPredefinedLogStream(ffi::DefaultLogStream_STDERR, null),
+            Debugger =>
+                ffi::aiGetPredefinedLogStream(ffi::DefaultLogStream_DEBUGGER, null),
+            Custom(_writer) => {
                 // writer.write_be_u32(0u32);
                 // ffi::LogStream {
                 //     callback: stream_call_back,

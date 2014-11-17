@@ -6,31 +6,31 @@ use libc::{c_float};
 /// Enumerates all supported types of light sources.
 #[deriving(Show)]
 #[repr(C)]
-pub enum LightSourceType {
+pub enum LightType {
     /// An undefined light, not a valid value
     // TODO handle this in a rust way?
-    UndefinedLight = 0x0,
+    Undefined = 0x0,
 
     /// A directional light source has a well-defined direction.
     ///
     /// A directional light source has a well-defined direction
     /// but is infinitely far away. That's quite a good
     /// approximation for sun light.
-    DirectionalLight = 0x1,
+    Directional = 0x1,
 
     /// A point light emits light in all directions.
     ///
     /// A point light source has a well-defined position
     /// in space but no direction - it emits light in all
     /// directions. A normal bulb is a point light.
-    PointLight = 0x2,
+    Point = 0x2,
 
     /// A spot light source emits light in a specific angle.
     ///
     /// It has a position and a direction it is pointing to.
     /// A good example for a spot light is a light spot in
     /// sport arenas.
-    SpotLight = 0x3,
+    Spot = 0x3,
 }
 
 /// Helper structure to describe a light source.
@@ -57,8 +57,8 @@ pub struct Light {
 
     /// The type of the light source.
     ///
-    /// LightSource_UNDEFINED is not a valid value for this member.
-    pub light_type: LightSourceType,
+    /// `LightType::Undefined` is not a valid value for this member.
+    pub light_type: LightType,
 
     /// Position of the light source in space. Relative to the
     /// transformation of the node corresponding to the light.
@@ -77,7 +77,7 @@ pub struct Light {
     ///
     /// The intensity of the light source at a given distance 'd' from
     /// the light's position is
-    /// ```
+    /// ```math
     /// Atten = 1/( att0 + att1 * d + att2 * d*d)
     /// ```
     /// This member corresponds to the att0 variable in the equation.

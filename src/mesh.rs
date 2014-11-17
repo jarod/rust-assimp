@@ -6,6 +6,8 @@ use std::fmt;
 use types::{Vector3D, Color4D, Matrix4x4, AiString};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
 
+use mesh::PrimitiveType::*;
+
 /// Maximum number of indices per face (polygon).
 pub const AI_MAX_FACE_INDICES : uint = 0x7fff;
 

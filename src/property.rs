@@ -5,7 +5,7 @@ use types::AiString;
 
 /// Properties that can be used to refine the behaviour of the importer.
 #[allow(non_camel_case_types)]
-pub enum ImportProperty<'a> {
+pub enum Property<'a> {
     /// Enables time measurements.
     ///
     /// If enabled, measures the time needed for each part of the loading
@@ -67,7 +67,7 @@ pub enum ImportProperty<'a> {
     /// Property type: string.
     IMPORT_MDL_COLORMAP(&'a AiString),
 
-    ///  Configures the aiProcess_RemoveRedundantMaterials step to
+    ///  Configures the Process::RemoveRedundantMaterials step to
     ///  keep materials matching a name in a given list.
     ///
     /// This is a list of 1 to n strings, ' ' serves as delimiter character.
@@ -92,7 +92,7 @@ pub enum ImportProperty<'a> {
     /// Propety type Default value: n/a
     PP_RRM_EXCLUDE_LIST(&'a AiString),
 
-    ///  Configures the aiProcess_PretransformVertices step to
+    ///  Configures the Process::PretransformVertices step to
     ///  keep the scene hierarchy. Meshes are moved to worldspace, but
     ///  no optimization is performed (read: meshes with equal materials are not
     ///  joined. The total number of meshes won't change).
@@ -105,7 +105,7 @@ pub enum ImportProperty<'a> {
     /// Property type: bool. Default value: false.
     PP_PTV_KEEP_HIERARCHY(bool),
 
-    /// Configures the aiProcess_PretransformVertices step to normalize
+    /// Configures the Process::PretransformVertices step to normalize
     /// all vertex components into the [-1,1] range. That is, a bounding box
     /// for the whole scene is computed, the maximum component is taken and all
     /// meshes are scaled appropriately (uniformly of course!).
@@ -113,19 +113,19 @@ pub enum ImportProperty<'a> {
     /// data
     PP_PTV_NORMALIZE(f32),
 
-    ///  Configures the aiProcess_FindDegenerates step to
+    ///  Configures the Process::FindDegenerates step to
     ///  remove degenerated primitives from the import - immediately.
     ///
     /// The default behaviour converts degenerated triangles to lines and
     /// degenerated lines to points. See the documentation to the
-    /// aiProcess_FindDegenerates step for a detailed example of the various ways
+    /// Process::FindDegenerates step for a detailed example of the various ways
     /// to get rid of these lines and points if you don't want them.
     /// Property type: bool.
     ///
     /// Property type: bool. Default value: false.
     PP_FD_REMOVE(bool),
 
-    /// Configures the aiProcess_OptimizeGraph step to preserve nodes
+    /// Configures the Process::OptimizeGraph step to preserve nodes
     /// matching a name in a given list.
     ///
     /// This is a list of 1 to n strings, ' ' serves as delimiter character.
@@ -166,7 +166,7 @@ pub enum ImportProperty<'a> {
 
     ///  Set the maximum number of bones affecting a single vertex
     ///
-    /// This is used by the aiProcess_LimitBoneWeights PostProcess-Step.
+    /// This is used by the Process::LimitBoneWeights PostProcess-Step.
     ///
     ///
     /// Property type: integer. The default value is `LBW_MAX_WEIGHTS`
@@ -174,14 +174,14 @@ pub enum ImportProperty<'a> {
 
     /// Lower the deboning threshold in order to remove more bones.
     ///
-    /// This is used by the aiProcess_Debone PostProcess-Step.
+    /// This is used by the Process::Debone PostProcess-Step.
     ///
     /// Property type: float. The default value is `DEBONE_THRESHOLD`
     PP_DB_THRESHOLD(f32),
 
     /// Require all bones qualify for deboning before removing any
     ///
-    /// This is used by the aiProcess_Debone PostProcess-Step.
+    /// This is used by the Process::Debone PostProcess-Step.
     ///
     /// The default value is 0
     ///
@@ -189,7 +189,7 @@ pub enum ImportProperty<'a> {
     PP_DB_ALL_OR_NONE(bool),
 
     /// brief Set the size of the post-transform vertex cache to optimize the
-    ///    vertices for. This configures the aiProcess_ImproveCacheLocality step.
+    ///    vertices for. This configures the Process::ImproveCacheLocality step.
     ///
     /// The size is given in vertices. Of course you can't know how the vertex
     /// format will exactly look like after the import returns, but you can still
@@ -201,7 +201,7 @@ pub enum ImportProperty<'a> {
     /// Property type: integer.
     PP_ICL_PTCACHE_SIZE(int),
 
-    /// Input parameter to the `Process_RemoveComponent` step:
+    /// Input parameter to the `Process::RemoveComponent` step:
     /// Specifies the parts of the data structure to be removed.
     ///
     /// See the documentation to this step for further details. The property
@@ -216,7 +216,7 @@ pub enum ImportProperty<'a> {
     /// Propety type: array of Component's. Default: no components
     PP_RVC_FLAGS(&'a [Component]),
 
-    /// Input parameter to the `Process_SortByPType` step.
+    /// Input parameter to the `Process::SortByPType` step.
     ///
     /// Specifies which primitive types are removed by the step.  A typical
     /// use would be to exclude all line and point meshes from the import.
@@ -224,7 +224,7 @@ pub enum ImportProperty<'a> {
     /// PropetyType: array of PrimitiveType. Default: no primitives are removed
     PP_SBP_REMOVE(&'a [PrimitiveType]),
 
-    /// Input parameter to the Process_FindInvalidData step:
+    /// Input parameter to the Process::FindInvalidData step:
     /// Specifies the floating-point accuracy for animation values. The step
     /// checks for animation tracks where all frame values are absolutely equal
     /// and removes them. This tweakable controls the epsilon for floating-point
@@ -236,13 +236,13 @@ pub enum ImportProperty<'a> {
     /// then.
     PP_FID_ANIM_ACCURACY(f32),
 
-    /// Input parameter to the Process_TransformUVCoords step:
+    /// Input parameter to the Process::TransformUVCoords step:
     /// Specifies which UV transformations are evaluated.
     ///
     /// This is a bitwise combination of the TransformUV flags.
     ///
     /// Property type: array of TransformUV
-    /// By default all transformations are enabled (TransformUV_ALL).
+    /// By default all transformations are enabled (TransformUV::All).
     PP_TUV_EVALUATE(&'a [TransformUV]),
 
     /// A hint to assimp to favour speed against import quality.
@@ -448,10 +448,10 @@ pub enum ImportProperty<'a> {
     ///  algorithm to triangulate wall and floor meshes.
     ///
     /// If this property is set to false, walls will be either triangulated by
-    /// aiProcess_Triangulate or will be passed through as huge polygons with
+    /// Process::Triangulate or will be passed through as huge polygons with
     /// faked holes (i.e. holes that are connected with the outer boundary using
     /// a dummy edge). It is highly recommended to set this property to true
-    /// if you want triangulated data because aiProcess_Triangulate is known to
+    /// if you want triangulated data because Process::Triangulate is known to
     /// have problems with the kind of polygons that the IFC loader spits out for
     /// complicated meshes.
     ///
@@ -459,24 +459,24 @@ pub enum ImportProperty<'a> {
     IMPORT_IFC_CUSTOM_TRIANGULATION(bool),
 }
 
-/// Options for the `Process_TransformUVCoords` post processing step
+/// Options for the `Process::TransformUVCoords` post processing step
 #[repr(C, u32)]
 pub enum TransformUV {
-    /// Process_TransformUVCoords evaluates UV scalings
-    TransformUV_SCALING = 0x1,
+    /// Scale UV coordinates
+    Scaling = 0x1,
 
-    /// Process_TransformUVCoords evaluates UV rotations
-    TransformUV_ROTATION = 0x2,
+    /// Rotate UV coordinates
+    Rotation = 0x2,
 
-    /// Process_TransformUVCoords evaluates UV translation
-    TransformUV_TRANSLATION = 0x4,
+    /// Translate UV coordinates
+    Translation = 0x4,
 
-    /// Process_TransformUVCoords evaluates UV scaling, rotation and translating.
+    /// Scale, rotate and translate
     ///
-    /// * TransformUV_SCALING
-    /// * TransformUV_ROTATION
-    /// * TransformUV_TRANSLATION
-    TransformUV_ALL = 0x7,
+    /// * TransformUV::Scaling
+    /// * TransformUV::Rotation
+    /// * TransformUV::Translation
+    All = 0x7,
 }
 
 // TODO(make this work)
@@ -493,64 +493,62 @@ pub enum TransformUV {
 /// Components of the `Scene` and `Mesh` data structures that can be excluded
 /// from the import using the `Propcess_RemoveComponent` step.
 ///
-/// See the documentation to `Process_RemoveComponent` for more details.
+/// See the documentation to `Process::RemoveComponent` for more details.
 #[repr(C, u32)]
 pub enum Component {
     /// Normal vectors
-    ComponentNormals = 0x2,
+    Normals = 0x2,
 
     /// Tangents and bitangents go always together ...
-    ComponentTangentsAndBitangents = 0x4,
+    TangentsAndBitangents = 0x4,
 
     //TODO make this work
     /// ALL color sets use Component_COLORn(N) to specify the N'th set
-    ComponentColors = 0x8,
+    Colors = 0x8,
 
     //TODO
     /// ALL texture UV sets Component_TEXCOORDn(N) to specify the N'th set
-    ComponentTexcoords = 0x10,
+    Texcoords = 0x10,
 
     /// Removes all bone weights from all meshes.
     ///
     /// The scenegraph nodes corresponding to the bones are NOT removed.  Use
-    /// the Process_OptimizeGraph step to do this
-    ComponentBoneweights = 0x20,
+    /// the Process::OptimizeGraph step to do this
+    Boneweights = 0x20,
 
     /// Removes all node animations
     ///
     /// The corresponding scenegraph nodes are NOT removed.  use the
-    /// `Process_OptimizeGraph` step to do this
-    ComponentAnimations = 0x40,
+    /// `Process::OptimizeGraph` step to do this
+    Animations = 0x40,
 
     /// Removes all embedded textures (Scene::mTextures)
-    ComponentTextures = 0x80,
+    Textures = 0x80,
 
     /// Removes all light sources (Scene::mLights).
     ///
     /// The corresponding scenegraph nodes are *not* removed. Use the
-    /// Process_OptimizeGraph step to do this
-    ComponentLights = 0x100,
+    /// Process::OptimizeGraph step to do this
+    Lights = 0x100,
 
     /// Removes all cameras.
     ///
     /// The corresponding scenegraph nodes are *not* removed. Use the
-    /// Process_OptimizeGraph step to remove them.
-    ComponentCameras = 0x200,
+    /// Process::OptimizeGraph step to remove them.
+    Cameras = 0x200,
 
     /// Removes all meshes (Scene::mMeshes).
-    ComponentMeshes = 0x400,
+    Meshes = 0x400,
 
     /// Removes all materials.
     ///
     /// One default material will be generated, so `Scene::num_materials`
     /// will be 1.
-    ComponentMaterials = 0x800,
+    Materials = 0x800,
 }
 
-// NOTE: These values can be specified at compile time, so I don't see much
-// point in including them.
 #[cfg(untrue)]
-mod default_compile {
+mod todo {
     // default value for AI_CONFIG_PP_SLM_TRIANGLE_LIMIT
     pub const SBBC_DEFAULT_MAX_BONES : u32 = 60;
 
@@ -568,7 +566,6 @@ mod default_compile {
 
     // Default value for the #PP_ICL_PTCACHE_SIZE property
     pub const ICL_PTCACHE_SIZE : u32 = 12;
-
 }
 
 // ###########################################################################

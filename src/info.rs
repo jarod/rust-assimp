@@ -2,26 +2,27 @@
 
 use std::c_str::CString;
 
-use types::{AiString, AiTrue};
+use types::AiBool::{AiTrue};
+use types::AiString;
 use ffi;
 
 /// Flags for checking how assimp was compiled
 #[repr(C, u32)]
 pub enum CompileFlags {
     /// Assimp was compiled as a shared object (Windows: DLL)
-    CompileFlags_SHARED = 0x1,
+    Shared = 0x1,
 
     /// Assimp was compiled against STLport
-    CompileFlags_STLPORT = 0x2,
+    STLPort = 0x2,
 
     /// Assimp was compiled as a debug build
-    CompileFlags_DEBUG = 0x4,
+    Debug = 0x4,
 
     /// Assimp was compiled with `ASSIMP_BUILD_BOOST_WORKAROUND` defined
-    CompileFlags_NOBOOST = 0x8,
+    NoBoost = 0x8,
 
     /// Assimp was compiled with `ASSIMP_BUILD_SINGLETHREADED` defined
-    CompileFlags_SINGLETHREADED = 0x10,
+    SingleThreaded = 0x10,
 }
 
 // It appears assimp doesn't expose a way to get this information using the

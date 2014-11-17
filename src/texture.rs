@@ -90,18 +90,18 @@ pub enum TextureData<'a> {
     /// Encoded texture data
     Encoded {
         /// The length of the texture data in bytes
-        pub len: u32,
+        len: u32,
         /// The encoded texture data
-        pub data: &'a [u8],
+        data: &'a [u8],
     },
     /// Decoded texture data
     Decoded {
         /// The width of the texture data in texels
-        pub width: u32,
+        width: u32,
         /// The height of the texture data in texels
-        pub height: u32,
+        height: u32,
         /// A linear array store the texels in the texture
-        pub data: &'a [Texel]
+        data: &'a [Texel]
     },
 }
 
@@ -112,7 +112,7 @@ impl Texture {
             let data = unsafe {
                 ptr_to_slice(self.pc_data as *mut u8, self.width as uint)
             };
-            Encoded {
+            TextureData::Encoded {
                 len: self.width,
                 data: data,
             }
@@ -120,7 +120,7 @@ impl Texture {
             let data = unsafe {
                 ptr_to_slice(self.pc_data, (self.width * self.height) as uint)
             };
-            Decoded {
+            TextureData::Decoded {
                 width: self.width,
                 height: self.height,
                 data: data,

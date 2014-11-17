@@ -3,6 +3,7 @@ pub use ffi::cimport::*;
 pub use ffi::cexport::*;
 pub use ffi::types::*;
 pub use ffi::log::*;
+pub use ffi::log::DefaultLogStream::*;
 pub use ffi::info::*;
 
 //TODO remove the stuff we don't need once we leave the experimental stage

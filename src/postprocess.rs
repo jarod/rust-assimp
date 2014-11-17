@@ -1,8 +1,8 @@
-//! Defines all the possible post processing steps.
+///! Defines all the possible post processing steps.
 
-/// Post processing steps that can be applied once a model is loaded.
+/// Post processing steps that can be applied once a model is loaded
 #[repr(C, u32)]
-pub enum PostProcessSteps {
+pub enum Process {
     /// Calculates the tangents and bitangents for the imported meshes.
     ///
     /// Does nothing if a mesh does not have normals. You might want this post
@@ -11,7 +11,7 @@ pub enum PostProcessSteps {
     /// config setting, `AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE`, which
     /// allows you to specify a maximum smoothing angle for the algorithm.
     /// However, usually you'll want to leave it at the default value.
-    Process_CalcTangentSpace = 0x1,
+    CalcTangentSpace = 0x1,
 
     /// Identifies and joins identical vertex data sets within all imported
     /// meshes.
@@ -24,7 +24,7 @@ pub enum PostProcessSteps {
     ///
     /// If this flag is *not* specified, no vertices are referenced by
     /// more than one face and no index buffer is required for rendering.
-    Process_JoinIdenticalVertices = 0x2,
+    JoinIdenticalVertices = 0x2,
 
     /// Converts all the imported data to a left-handed coordinate space.
     ///
@@ -35,10 +35,10 @@ pub enum PostProcessSteps {
     /// away from the viewer.
     ///
     /// You'll probably want to consider this flag if you use Direct3D for
-    /// rendering. The `Process_ConvertToLeftHanded` flag supersedes this
+    /// rendering. The `Process::ConvertToLeftHanded` flag supersedes this
     /// setting and bundles all conversions typically required for D3D-based
     /// applications.
-    Process_MakeLeftHanded = 0x4,
+    MakeLeftHanded = 0x4,
 
     /// Triangulates all faces of all meshes.
     ///
@@ -49,9 +49,9 @@ pub enum PostProcessSteps {
     /// 'triangles only' with no other kinds of primitives, try the following
     /// solution:
     ///
-    ///  * Specify both `Process_Triangulate` and `Process_SortByPType`
+    ///  * Specify both `Process::Triangulate` and `Process::SortByPType`
     ///  * Ignore all point and line meshes when you process assimp's output
-    Process_Triangulate = 0x8,
+    Triangulate = 0x8,
 
     /// Removes some parts of the data structure (animations, materials,
     ///  light sources, cameras, textures, vertex components).
@@ -70,12 +70,12 @@ pub enum PostProcessSteps {
     /// This flag is a poor one, mainly because its purpose is usually
     /// misunderstood. Consider the following case: a 3D model has been
     /// exported from a CAD app, and it has per-face vertex colors. Vertex
-    /// positions can't be shared, thus the `Process_JoinIdenticalVertices`
+    /// positions can't be shared, thus the `Process::JoinIdenticalVertices`
     /// step fails to optimize the data because of these nasty little vertex
     /// colors.  Most apps don't even process them, so it's all for nothing.
     /// By using this step, unneeded components are excluded as early as
     /// possible thus opening more room for internal optimizations.
-    Process_RemoveComponent = 0x10,
+    RemoveComponent = 0x10,
 
     /// Generates normals for all faces of all meshes.
     ///
@@ -84,11 +84,11 @@ pub enum PostProcessSteps {
     /// they're usually already there. Face normals are shared between all
     /// points of a single face, so a single point can have multiple normals,
     /// which forces the library to duplicate vertices in some cases.
-    /// `aiProcess_JoinIdenticalVertices` is *senseless* then.
+    /// `Process::JoinIdenticalVertices` is *senseless* then.
     ///
     /// This flag may not be specified together with
-    /// `aiProcess_GenSmoothNormals`.
-    Process_GenNormals = 0x20,
+    /// `Process::GenSmoothNormals`.
+    GenNormals = 0x20,
 
     /// Generates smooth normals for all vertices in the mesh.
     ///
@@ -96,14 +96,14 @@ pub enum PostProcessSteps {
     /// evaluated. Model importers try to load them from the source file, so
     /// they're usually already there.
     ///
-    /// This flag may not be specified together with `Process_GenNormals`.
+    /// This flag may not be specified together with `Process::GenNormals`.
     /// There's a configuration option,
     /// `AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE` which allows you to
     /// specify an angle maximum for the normal smoothing algorithm. Normals
     /// exceeding this limit are not smoothed, resulting in a 'hard' seam
     /// between two faces.  Using a decent angle here (e.g. 80 degrees)
     /// results in very good visual appearance.
-    Process_GenSmoothNormals = 0x40,
+    GenSmoothNormals = 0x40,
 
     /// Splits large meshes into smaller sub-meshes.
     ///
@@ -122,7 +122,7 @@ pub enum PostProcessSteps {
     /// That splitting is generally a time-consuming task, but only if
     /// there's something to split. The use of this step is recommended for
     /// most users.
-    Process_SplitLargeMeshes = 0x80,
+    SplitLargeMeshes = 0x80,
 
     /// Removes the node graph and pre-transforms all vertices with
     /// the local transformation matrices of their nodes.
@@ -144,7 +144,7 @@ pub enum PostProcessSteps {
     /// Note:
     /// The `AI_CONFIG_PP_PTV_NORMALIZE` configuration property can be set to
     /// normalize the scene's spatial dimension to the -1...1 range.
-    Process_PreTransformVertices = 0x100,
+    PreTransformVertices = 0x100,
 
     /// Limits the number of bones simultaneously affecting a single vertex to
     /// a maximum value.
@@ -158,7 +158,7 @@ pub enum PostProcessSteps {
     ///
     /// If you intend to perform the skinning in hardware, this post
     /// processing step might be of interest to you.
-    Process_LimitBoneWeights = 0x200,
+    LimitBoneWeights = 0x200,
 
     /// Validates the imported scene data structure.
     /// This makes sure that all indices are valid, all animations and bones
@@ -183,7 +183,7 @@ pub enum PostProcessSteps {
     ///
     /// This post-processing step is not time-consuming. Its use is not
     /// compulsory, but recommended.
-    Process_ValidateDataStructure = 0x400,
+    ValidateDataStructure = 0x400,
 
     /// Reorders triangles for better vertex cache locality.
     ///
@@ -195,12 +195,12 @@ pub enum PostProcessSteps {
     /// If you intend to render huge models in hardware, this step might
     /// be of interest to you. The `AI_CONFIG_PP_ICL_PTCACHE_SIZE` config
     /// setting can be used to fine-tune the cache optimization.
-    Process_ImproveCacheLocality = 0x800,
+    ImproveCacheLocality = 0x800,
 
     /// Searches for redundant/unreferenced materials and removes them.
     ///
     /// This is especially useful in combination with the
-    /// `Process_PretransformVertices` and `Process_OptimizeMeshes` flags.
+    /// `Process::PretransformVertices` and `Process::OptimizeMeshes` flags.
     /// Both join small meshes with equal characteristics, but they can't do
     /// their work if two meshes have different materials. Because several
     /// material settings are lost during Assimp's import filters, (and
@@ -214,7 +214,7 @@ pub enum PostProcessSteps {
     /// content pipeline (probably using *magic* material names), don't
     /// specify this flag. Alternatively take a look at the
     /// `AI_CONFIG_PP_RRM_EXCLUDE_LIST` setting.
-    Process_RemoveRedundantMaterials = 0x1000,
+    RemoveRedundantMaterials = 0x1000,
 
     /// This step tries to determine which meshes have normal vectors that are
     /// facing inwards and inverts them.
@@ -226,7 +226,7 @@ pub enum PostProcessSteps {
     /// the step tries to filter such cases.  The step inverts all in-facing
     /// normals. Generally it is recommended to enable this step, although the
     /// result is not always correct.
-    Process_FixInfacingNormals = 0x2000,
+    FixInfacingNormals = 0x2000,
 
     /// This step splits meshes with more than one primitive type in
     /// homogeneous sub-meshes.
@@ -238,7 +238,7 @@ pub enum PostProcessSteps {
     /// `AI_CONFIG_PP_SBP_REMOVE` option to specify which primitive
     /// types you need. This can be used to easily exclude lines and points,
     /// which are rarely used, from the import.
-    Process_SortByPType = 0x8000,
+    SortByPType = 0x8000,
 
     /// This step searches all meshes for degenerate primitives and
     /// converts them to proper lines or points.
@@ -250,7 +250,7 @@ pub enum PostProcessSteps {
     ///  1. If you support lines and points for rendering but don't
     ///     want the degenerates:
     ///
-    ///    * Specify the `Process_FindDegenerates` flag.
+    ///    * Specify the `Process::FindDegenerates` flag.
     ///
     ///    * Set the `AI_CONFIG_PP_FD_REMOVE` option to 1. This will
     ///        cause the step to remove degenerate triangles from the import
@@ -259,13 +259,13 @@ pub enum PostProcessSteps {
     ///
     ///  2. If you don't support lines and points at all:
     ///
-    ///    * Specify the `Process_FindDegenerates` flag.
+    ///    * Specify the `Process::FindDegenerates` flag.
     ///
-    ///    * Specify the `Process_SortByPType` flag. This moves line and
+    ///    * Specify the `Process::SortByPType` flag. This moves line and
     ///      point primitives to separate meshes.
     ///
     ///    * Set the `AI_CONFIG_PP_SBP_REMOVE` option to
-    ///        `aiPrimitiveType_POINTS | PrimitiveType_LINES`
+    ///        `PrimitiveType_POINTS | PrimitiveType_LINES`
     ///        to cause `SortByPType` to reject point
     ///
     ///  Note:
@@ -273,7 +273,7 @@ pub enum PostProcessSteps {
     ///  not removed by default. There are several file formats which don't
     ///  support lines or points, and some exporters bypass the format
     ///  specification and write them as degenerate triangles instead.
-    Process_FindDegenerates = 0x10000,
+    FindDegenerates = 0x10000,
 
     /// This step searches all meshes for invalid data, such as zeroed
     /// normal vectors or invalid UV coords and removes/fixes them. This is
@@ -281,14 +281,14 @@ pub enum PostProcessSteps {
     ///
     /// This is especially useful for normals. If they are invalid, and
     /// the step recognizes this, they will be removed and can later
-    /// be recomputed, i.e. by the `aiProcess_GenSmoothNormals` flag.
+    /// be recomputed, i.e. by the `Process::GenSmoothNormals` flag.
     ///
     /// The step will also remove meshes that are infinitely small and reduce
     /// animation tracks consisting of hundreds if redundant keys to a single
     /// key. The `AI_CONFIG_PP_FID_ANIM_ACCURACY` config property decides
     /// the accuracy of the check for duplicate animation tracks.
     ///
-    Process_FindInvalidData = 0x20000,
+    FindInvalidData = 0x20000,
 
     /// This step converts non-UV mappings (such as spherical or
     /// cylindrical mapping) to proper texture coordinate channels.
@@ -304,7 +304,7 @@ pub enum PostProcessSteps {
     /// If this step is not requested, you'll need to process the
     /// `AI_MATKEY_MAPPING` material property in order to display all assets
     ///  properly.
-    Process_GenUVCoords = 0x40000,
+    GenUVCoords = 0x40000,
 
     /// This step applies per-texture UV transformations and bakes them into
     /// stand-alone vtexture coordinate channels.
@@ -320,7 +320,7 @@ pub enum PostProcessSteps {
     /// UV transformations are usually implemented in real-time apps by
     /// transforming texture coordinates at vertex shader stage with a 3x3
     /// (homogenous) transformation matrix.
-    Process_TransformUVCoords = 0x80000,
+    TransformUVCoords = 0x80000,
 
     /// This step searches for duplicate meshes and replaces them with
     /// references to the first mesh.
@@ -333,17 +333,17 @@ pub enum PostProcessSteps {
     /// assignment to meshes, which means that identical meshes with
     /// different materials are currently *not* joined, although this is
     /// planned for future versions.
-    Process_FindInstances = 0x100000,
+    FindInstances = 0x100000,
 
     /// A postprocessing step to reduce the number of meshes.
     ///
     /// This will, in fact, reduce the number of draw calls.
     ///
     /// This is a very effective optimization and is recommended to be used
-    /// together with `Process_OptimizeGraph`, if possible. The flag is fully
-    /// compatible with both `Process_SplitLargeMeshes and
-    /// `aiProcess_SortByPType`.
-    Process_OptimizeMeshes  = 0x200000,
+    /// together with `Process::OptimizeGraph`, if possible. The flag is fully
+    /// compatible with both `Process::SplitLargeMeshes and
+    /// `Process::SortByPType`.
+    OptimizeMeshes  = 0x200000,
 
 
     /// A postprocessing step to optimize the scene hierarchy.
@@ -363,16 +363,16 @@ pub enum PostProcessSteps {
     /// optimization if you just want to get the model data, convert it to
     /// your own format, and render it as fast as possible.
     ///
-    /// This flag is designed to be used with `aiProcess_OptimizeMeshes` for
+    /// This flag is designed to be used with `Process::OptimizeMeshes` for
     /// best results.
     ///
     /// Note:
     /// Scenes with thousands of extremely small meshes packed in deeply
     /// nested nodes exist for almost all file formats.
-    /// `aiProcess_OptimizeMeshes` in combination with
-    /// `aiProcess_OptimizeGraph` usually fixes them all and makes them
+    /// `Process::OptimizeMeshes` in combination with
+    /// `Process::OptimizeGraph` usually fixes them all and makes them
     /// renderable.
-    Process_OptimizeGraph  = 0x400000,
+    OptimizeGraph  = 0x400000,
 
     /// This step flips all UV coordinates along the y-axis and adjusts
     /// material settings and bitangents accordingly.
@@ -388,19 +388,19 @@ pub enum PostProcessSteps {
     /// ```
     ///
     /// You'll probably want to consider this flag if you use Direct3D for
-    /// rendering. The `Process_ConvertToLeftHanded` flag supersedes this
+    /// rendering. The `Process::ConvertToLeftHanded` flag supersedes this
     /// setting and bundles all conversions typically required for D3D-based
     /// applications.
-    Process_FlipUVs = 0x800000,
+    FlipUVs = 0x800000,
 
     /// This step adjusts the output face winding order to be CW.
     ///
     /// The default face winding order is counter clockwise (CCW).
-    Process_FlipWindingOrder  = 0x1000000,
+    FlipWindingOrder  = 0x1000000,
 
     /// This step splits meshes with many bones into sub-meshes so that each
     /// su-bmesh has fewer or as many bones as a given limit.
-    Process_SplitByBoneCount  = 0x2000000,
+    SplitByBoneCount  = 0x2000000,
 
     /// This step removes bones losslessly or according to some threshold.
     ///
@@ -413,17 +413,17 @@ pub enum PostProcessSteps {
     /// * Use `AI_CONFIG_PP_DB_THRESHOLD` to control this.
     /// * Use `AI_CONFIG_PP_DB_ALL_OR_NONE` if you want bones removed if and
     ///   only if all bones within the scene qualify for removal.
-    Process_Debone  = 0x4000000,
+    Debone  = 0x4000000,
 
 
     /// Shortcut flag for Direct3D-based applications.
     ///
-    /// Supersedes the `Process_MakeLeftHanded` and `Process_FlipUVs` and
-    /// `Process_FlipWindingOrder` flags.  The output data matches Direct3D's
+    /// Supersedes the `Process::MakeLeftHanded` and `Process::FlipUVs` and
+    /// `Process::FlipWindingOrder` flags.  The output data matches Direct3D's
     /// conventions: left-handed geometry, upper-left origin for UV coordinates
     /// and finally clockwise face order, suitable for CCW culling.
     #[deprecated]
-    Process_ConvertToLeftHanded = 0x1800004,
+    ConvertToLeftHanded = 0x1800004,
 
 
     /// Default postprocess configuration optimizing the data for real-time
@@ -433,17 +433,17 @@ pub enum PostProcessSteps {
     /// PCs, maybe for direct use in game.
     ///
     /// If you're using DirectX, don't forget to combine this value with the
-    /// `Process_ConvertToLeftHanded` step. If you don't support UV
+    /// `Process::ConvertToLeftHanded` step. If you don't support UV
     /// transformations in your application apply the
-    /// `Process_TransformUVCoords` step, too.
+    /// `Process::TransformUVCoords` step, too.
     ///
-    /// *  Process_CalcTangentSpace
-    /// *  Process_GenNormals
-    /// *  Process_JoinIdenticalVertices
-    /// *  Process_Triangulate
-    /// *  Process_GenUVCoords
-    /// *  Process_SortByPType
-    ProcessPreset_TargetRealtime_Fast = 0x4802b,
+    /// *  Process::CalcTangentSpace
+    /// *  Process::GenNormals
+    /// *  Process::JoinIdenticalVertices
+    /// *  Process::Triangulate
+    /// *  Process::GenUVCoords
+    /// *  Process::SortByPType
+    Preset_TargetRealtime_Fast = 0x4802b,
 
     /// Default postprocess configuration optimizing the data for real-time
     /// rendering.
@@ -454,23 +454,23 @@ pub enum PostProcessSteps {
     /// import speed is not so important.
     ///
     /// If you're using DirectX, don't forget to combine this value with the
-    /// `Process_ConvertToLeftHanded` step. If you don't support UV
-    /// transformations in your application apply the `Process_TransformUVCoords`
+    /// `Process::ConvertToLeftHanded` step. If you don't support UV
+    /// transformations in your application apply the `Process::TransformUVCoords`
     /// step, too.
     ///
-    /// *  Process_CalcTangentSpace
-    /// *  Process_GenSmoothNormals
-    /// *  Process_JoinIdenticalVertices
-    /// *  Process_ImproveCacheLocality
-    /// *  Process_LimitBoneWeights
-    /// *  Process_RemoveRedundantMaterials
-    /// *  Process_SplitLargeMeshes
-    /// *  Process_Triangulate
-    /// *  Process_GenUVCoords
-    /// *  Process_SortByPType
-    /// *  Process_FindDegenerates
-    /// *  Process_FindInvalidData
-    ProcessPreset_TargetRealtime_Quality = 0x79acb,
+    /// *  Process::CalcTangentSpace
+    /// *  Process::GenSmoothNormals
+    /// *  Process::JoinIdenticalVertices
+    /// *  Process::ImproveCacheLocality
+    /// *  Process::LimitBoneWeights
+    /// *  Process::RemoveRedundantMaterials
+    /// *  Process::SplitLargeMeshes
+    /// *  Process::Triangulate
+    /// *  Process::GenUVCoords
+    /// *  Process::SortByPType
+    /// *  Process::FindDegenerates
+    /// *  Process::FindInvalidData
+    Preset_TargetRealtime_Quality = 0x79acb,
 
     /// Default postprocess configuration optimizing the data for real-time
     /// rendering.
@@ -480,16 +480,16 @@ pub enum PostProcessSteps {
     /// environments where import speed is not important.
     ///
     /// If you're using DirectX, don't forget to combine this value with the
-    /// `Process_ConvertToLeftHanded` step. If you don't support UV
+    /// `Process::ConvertToLeftHanded` step. If you don't support UV
     /// transformations in your application, apply the
-    /// `Process_TransformUVCoords` step, too.
+    /// `Process::TransformUVCoords` step, too.
     ///
     ///  *  ProcessPreset_TargetRealtime_Quality
-    ///  *  Process_FindInstances
-    ///  *  Process_ValidateDataStructure
-    ///  *  Process_OptimizeMeshes
-    ///  *  Process_Debone
-    ProcessPreset_TargetRealtime_MaxQuality = 0x4379ecb,
+    ///  *  Process::FindInstances
+    ///  *  Process::ValidateDataStructure
+    ///  *  Process::OptimizeMeshes
+    ///  *  Process::Debone
+    Preset_TargetRealtime_MaxQuality = 0x4379ecb,
 }
 
 #[cfg(test)]
@@ -498,48 +498,48 @@ mod test {
     use super::*;
     #[allow(non_upper_case_globals)]
     pub const Process_ConvertToLeftHanded_test : u32 =
-                                Process_MakeLeftHanded   as u32 |
-                                Process_FlipWindingOrder as u32 |
-                                Process_FlipUVs          as u32 ;
+                                Process::MakeLeftHanded   as u32 |
+                                Process::FlipWindingOrder as u32 |
+                                Process::FlipUVs          as u32 ;
     #[allow(non_upper_case_globals)]
     pub const ProcessPreset_TargetRealtime_Fast_test : u32 =
-                                Process_CalcTangentSpace       as u32 |
-                                Process_GenNormals             as u32 |
-                                Process_JoinIdenticalVertices  as u32 |
-                                Process_Triangulate            as u32 |
-                                Process_GenUVCoords            as u32 |
-                                Process_SortByPType            as u32 ;
+                                Process::CalcTangentSpace       as u32 |
+                                Process::GenNormals             as u32 |
+                                Process::JoinIdenticalVertices  as u32 |
+                                Process::Triangulate            as u32 |
+                                Process::GenUVCoords            as u32 |
+                                Process::SortByPType            as u32 ;
     #[allow(non_upper_case_globals)]
     pub const ProcessPreset_TargetRealtime_Quality_test : u32 =
-                                Process_CalcTangentSpace          as u32 |
-                                Process_GenSmoothNormals          as u32 |
-                                Process_JoinIdenticalVertices     as u32 |
-                                Process_ImproveCacheLocality      as u32 |
-                                Process_LimitBoneWeights          as u32 |
-                                Process_RemoveRedundantMaterials  as u32 |
-                                Process_SplitLargeMeshes          as u32 |
-                                Process_Triangulate               as u32 |
-                                Process_GenUVCoords               as u32 |
-                                Process_SortByPType               as u32 |
-                                Process_FindDegenerates           as u32 |
-                                Process_FindInvalidData           as u32 ;
+                                Process::CalcTangentSpace          as u32 |
+                                Process::GenSmoothNormals          as u32 |
+                                Process::JoinIdenticalVertices     as u32 |
+                                Process::ImproveCacheLocality      as u32 |
+                                Process::LimitBoneWeights          as u32 |
+                                Process::RemoveRedundantMaterials  as u32 |
+                                Process::SplitLargeMeshes          as u32 |
+                                Process::Triangulate               as u32 |
+                                Process::GenUVCoords               as u32 |
+                                Process::SortByPType               as u32 |
+                                Process::FindDegenerates           as u32 |
+                                Process::FindInvalidData           as u32 ;
     #[allow(non_upper_case_globals)]
     pub const ProcessPreset_TargetRealtime_MaxQuality_test : u32 =
-                            ProcessPreset_TargetRealtime_Quality as u32 |
-                            Process_FindInstances                as u32 |
-                            Process_ValidateDataStructure        as u32 |
-                            Process_OptimizeMeshes               as u32 |
-                            Process_Debone                       as u32 ;
+                            Process::Preset_TargetRealtime_Quality as u32 |
+                            Process::FindInstances                 as u32 |
+                            Process::ValidateDataStructure         as u32 |
+                            Process::OptimizeMeshes                as u32 |
+                            Process::Debone                        as u32 ;
     // Used to genearte the values used in the enum
     #[test]
     fn test_show_consts() {
-        assert!(Process_ConvertToLeftHanded as u32 ==
+        assert!(Process::ConvertToLeftHanded as u32 ==
                    Process_ConvertToLeftHanded_test);
-        assert!(ProcessPreset_TargetRealtime_MaxQuality as u32 ==
+        assert!(Process::Preset_TargetRealtime_MaxQuality as u32 ==
                    ProcessPreset_TargetRealtime_MaxQuality_test);
-        assert!(ProcessPreset_TargetRealtime_Quality as u32 ==
+        assert!(Process::Preset_TargetRealtime_Quality as u32 ==
                    ProcessPreset_TargetRealtime_Quality_test);
-        assert!(ProcessPreset_TargetRealtime_Fast as u32 ==
+        assert!(Process::Preset_TargetRealtime_Fast as u32 ==
                    ProcessPreset_TargetRealtime_Fast_test);
     }
 }

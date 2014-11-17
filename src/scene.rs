@@ -12,7 +12,7 @@ use mesh::Mesh;
 use texture::Texture;
 use types::{Matrix4x4, AiString, MemoryInfo};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
-use postprocess::PostProcessSteps;
+use postprocess::Process;
 use ffi;
 
 /// A node in the imported hierarchy.
@@ -372,7 +372,7 @@ impl<'a> Scene<'a> {
     /// This process can fail if using `Process_ValidateDS` in which case an
     /// error is returned and further usage of the scene is invalid.
     pub fn apply_postprocessing(&mut self,
-                                steps: &[PostProcessSteps])
+                                steps: &[Process])
                                 -> Result<(), &str> {
         unsafe {
             let flags = steps.iter().fold(0, |x, &y| x | y as u32);
