@@ -410,24 +410,3 @@ impl<'a> Drop for Scene<'a> {
 //         }
 //     }
 // }
-
-#[cfg(test)]
-mod test {
-    use super::Scene;
-    #[test]
-    fn test_import() {
-        let scene = Scene::from_file("cube.dae", 0);
-
-        println!("mem_info {}", scene.get_memory_info());
-
-        for node in scene.get_root_node().get_children().iter() {
-            println!("node: {}", node.name);
-        }
-        for mesh in scene.get_meshes().iter() {
-            println!("mesh.num_vertices: {}", mesh.num_vertices);
-            for vert in mesh.get_vertices().iter() {
-                println!("vert: {}", vert);
-            }
-        }
-    }
-}

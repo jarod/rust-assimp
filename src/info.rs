@@ -185,7 +185,7 @@ mod test {
         println!("({}, {}, {})", major, minor, rev);
 
         // Get supported formats
-        println!("{}\n", info::get_supported_exts());
+        println!("{}\n", info::get_supported_import_exts());
 
         // Get licencing
         println!("{}", info::get_legal_string());

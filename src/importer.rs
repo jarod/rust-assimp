@@ -186,7 +186,7 @@ mod test {
     // use std::io::BufReader;
 
     use super::*;
-    use config::*;
+    use properties::*;
 
     // Log to memory
     // let mut writer = MemWriter::new();
@@ -203,6 +203,6 @@ mod test {
 
         imp.set_import_property(PP_TUV_EVALUATE([]));
 
-        imp.import("cube.dae");
+        let _ = imp.import("examples/assets/cube.dae");
     }
 }
