@@ -8,7 +8,7 @@ pub enum Process {
     /// Does nothing if a mesh does not have normals. You might want this post
     /// processing step to be executed if you plan to use tangent space
     /// calculations such as normal mapping applied to the meshes. There's a
-    /// config setting, `AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE`, which
+    /// config setting, `Property::PP_CT_MAX_SMOOTHING_ANGLE`, which
     /// allows you to specify a maximum smoothing angle for the algorithm.
     /// However, usually you'll want to leave it at the default value.
     CalcTangentSpace = 0x1,
@@ -57,7 +57,7 @@ pub enum Process {
     ///  light sources, cameras, textures, vertex components).
     ///
     /// The  components to be removed are specified in a separate
-    /// configuration option, `AI_CONFIG_PP_RVC_FLAGS`. This is quite useful
+    /// configuration option, `Property::PP_RVC_FLAGS`. This is quite useful
     /// if you don't need all parts of the output structure. Vertex colors are
     /// rarely used today for example... Calling this step to remove unneeded
     /// data from the pipeline as early as possible results in increased
@@ -98,7 +98,7 @@ pub enum Process {
     ///
     /// This flag may not be specified together with `Process::GenNormals`.
     /// There's a configuration option,
-    /// `AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE` which allows you to
+    /// `Property::PP_GSN_MAX_SMOOTHING_ANGLE` which allows you to
     /// specify an angle maximum for the normal smoothing algorithm. Normals
     /// exceeding this limit are not smoothed, resulting in a 'hard' seam
     /// between two faces.  Using a decent angle here (e.g. 80 degrees)
@@ -114,7 +114,7 @@ pub enum Process {
     /// may specify both a triangle and vertex limit for a single mesh.
     ///
     /// The split limits can (and should!) be set through the
-    /// `AI_CONFIG_PP_SLM_VERTEX_LIMIT` and `AI_CONFIG_PP_SLM_TRIANGLE_LIMIT`
+    /// `Property::PP_SLM_VERTEX_LIMIT` and `Property::PP_SLM_TRIANGLE_LIMIT`
     /// settings. The default values are `AI_SLM_DEFAULT_MAX_VERTICES` and
     /// `AI_SLM_DEFAULT_MAX_TRIANGLES`.
     ///
@@ -142,7 +142,7 @@ pub enum Process {
     /// the normal list is zeroed. However, these artifacts are rare.
     ///
     /// Note:
-    /// The `AI_CONFIG_PP_PTV_NORMALIZE` configuration property can be set to
+    /// The `Property::PP_PTV_NORMALIZE` configuration property can be set to
     /// normalize the scene's spatial dimension to the -1...1 range.
     PreTransformVertices = 0x100,
 
@@ -153,7 +153,7 @@ pub enum Process {
     /// the least important vertex weights are removed and the remaining
     /// vertex weights are renormalized so that the weights still sum up to 1.
     /// The default bone weight limit is 4 (defined as `AI_LMW_MAX_WEIGHTS`) ,
-    /// but you can use the `AI_CONFIG_PP_LBW_MAX_WEIGHTS` setting to supply
+    /// but you can use the `Property::PP_LBW_MAX_WEIGHTS` setting to supply
     /// your own limit to the post processing step.
     ///
     /// If you intend to perform the skinning in hardware, this post
@@ -193,7 +193,7 @@ pub enum Process {
     /// (http://www.cs.princeton.edu/gfx/pubs/Sander_2007_%3ETR/tipsy.pdf).
     ///
     /// If you intend to render huge models in hardware, this step might
-    /// be of interest to you. The `AI_CONFIG_PP_ICL_PTCACHE_SIZE` config
+    /// be of interest to you. The `Property::PP_ICL_PTCACHE_SIZE` config
     /// setting can be used to fine-tune the cache optimization.
     ImproveCacheLocality = 0x800,
 
@@ -213,7 +213,7 @@ pub enum Process {
     /// So, if you're passing additional information through the
     /// content pipeline (probably using *magic* material names), don't
     /// specify this flag. Alternatively take a look at the
-    /// `AI_CONFIG_PP_RRM_EXCLUDE_LIST` setting.
+    /// `Property::PP_RRM_EXCLUDE_LIST` setting.
     RemoveRedundantMaterials = 0x1000,
 
     /// This step tries to determine which meshes have normal vectors that are
@@ -235,7 +235,7 @@ pub enum Process {
     /// returns, just one bit is set in `Mesh::primitive_types`. This is
     /// especially useful for real-time rendering where point and line
     /// primitives are often ignored or rendered separately.  You can use the
-    /// `AI_CONFIG_PP_SBP_REMOVE` option to specify which primitive
+    /// `PP_SBP_REMOVE` option to specify which primitive
     /// types you need. This can be used to easily exclude lines and points,
     /// which are rarely used, from the import.
     SortByPType = 0x8000,
@@ -252,7 +252,7 @@ pub enum Process {
     ///
     ///    * Specify the `Process::FindDegenerates` flag.
     ///
-    ///    * Set the `AI_CONFIG_PP_FD_REMOVE` option to 1. This will
+    ///    * Set `Property::PP_FD_REMOVE` option to `true`. This will
     ///        cause the step to remove degenerate triangles from the import
     ///        as soon as they're detected. They won't pass any further
     ///        pipeline steps.
@@ -264,9 +264,9 @@ pub enum Process {
     ///    * Specify the `Process::SortByPType` flag. This moves line and
     ///      point primitives to separate meshes.
     ///
-    ///    * Set the `AI_CONFIG_PP_SBP_REMOVE` option to
-    ///        `PrimitiveType_POINTS | PrimitiveType_LINES`
-    ///        to cause `SortByPType` to reject point
+    ///    * Set the `Property::PP_SBP_REMOVE` option to
+    ///        `PrimitiveType::Points | PrimitiveType::Lines`
+    ///        to cause `Process::SortByPType` to reject point
     ///
     ///  Note:
     ///  Degenerate polygons are not necessarily evil and that's why they're
@@ -285,7 +285,7 @@ pub enum Process {
     ///
     /// The step will also remove meshes that are infinitely small and reduce
     /// animation tracks consisting of hundreds if redundant keys to a single
-    /// key. The `AI_CONFIG_PP_FID_ANIM_ACCURACY` config property decides
+    /// key. The `Property::PP_FID_ANIM_ACCURACY` config property decides
     /// the accuracy of the check for duplicate animation tracks.
     ///
     FindInvalidData = 0x20000,
@@ -353,7 +353,7 @@ pub enum Process {
     ///
     /// Node names can be lost during this step. If you use special 'tag
     /// nodes' to pass additional information through your content pipeline,
-    /// use the `AI_CONFIG_PP_OG_EXCLUDE_LIST` setting to specify a
+    /// use the `Property::PP_OG_EXCLUDE_LIST` setting to specify a
     /// list of node names you want to be kept. Nodes matching one of the
     /// names in this list won't be touched or modified.
     ///
@@ -410,8 +410,8 @@ pub enum Process {
     /// animating nodes is extremely cheap, so this step is offered to clean
     /// up the data in that regard.
     ///
-    /// * Use `AI_CONFIG_PP_DB_THRESHOLD` to control this.
-    /// * Use `AI_CONFIG_PP_DB_ALL_OR_NONE` if you want bones removed if and
+    /// * Use `Property::PP_DB_THRESHOLD` to control this.
+    /// * Use `Property::PP_DB_ALL_OR_NONE` if you want bones removed if and
     ///   only if all bones within the scene qualify for removal.
     Debone  = 0x4000000,
 
@@ -494,23 +494,19 @@ pub enum Process {
 
 #[cfg(test)]
 mod test {
-    #![allow(deprecated)]
-    use super::*;
-    #[allow(non_upper_case_globals)]
-    pub const Process_ConvertToLeftHanded_test : u32 =
+    use super::Process;
+    pub const PROCESS_CONVERTTOLEFTHANDED_TEST : u32 =
                                 Process::MakeLeftHanded   as u32 |
                                 Process::FlipWindingOrder as u32 |
                                 Process::FlipUVs          as u32 ;
-    #[allow(non_upper_case_globals)]
-    pub const ProcessPreset_TargetRealtime_Fast_test : u32 =
+    pub const PROCESSPRESET_TARGETREALTIME_FAST_TEST : u32 =
                                 Process::CalcTangentSpace       as u32 |
                                 Process::GenNormals             as u32 |
                                 Process::JoinIdenticalVertices  as u32 |
                                 Process::Triangulate            as u32 |
                                 Process::GenUVCoords            as u32 |
                                 Process::SortByPType            as u32 ;
-    #[allow(non_upper_case_globals)]
-    pub const ProcessPreset_TargetRealtime_Quality_test : u32 =
+    pub const PROCESSPRESET_TARGETREALTIME_QUALITY_TEST : u32 =
                                 Process::CalcTangentSpace          as u32 |
                                 Process::GenSmoothNormals          as u32 |
                                 Process::JoinIdenticalVertices     as u32 |
@@ -523,23 +519,23 @@ mod test {
                                 Process::SortByPType               as u32 |
                                 Process::FindDegenerates           as u32 |
                                 Process::FindInvalidData           as u32 ;
-    #[allow(non_upper_case_globals)]
-    pub const ProcessPreset_TargetRealtime_MaxQuality_test : u32 =
+    pub const PROCESSPRESET_TARGETREALTIME_MAXQUALITY_TEST : u32 =
                             Process::Preset_TargetRealtime_Quality as u32 |
                             Process::FindInstances                 as u32 |
                             Process::ValidateDataStructure         as u32 |
                             Process::OptimizeMeshes                as u32 |
                             Process::Debone                        as u32 ;
     // Used to genearte the values used in the enum
+    #[allow(deprecated)]
     #[test]
     fn test_show_consts() {
         assert!(Process::ConvertToLeftHanded as u32 ==
-                   Process_ConvertToLeftHanded_test);
+                   PROCESS_CONVERTTOLEFTHANDED_TEST);
         assert!(Process::Preset_TargetRealtime_MaxQuality as u32 ==
-                   ProcessPreset_TargetRealtime_MaxQuality_test);
+                   PROCESSPRESET_TARGETREALTIME_MAXQUALITY_TEST);
         assert!(Process::Preset_TargetRealtime_Quality as u32 ==
-                   ProcessPreset_TargetRealtime_Quality_test);
+                   PROCESSPRESET_TARGETREALTIME_QUALITY_TEST);
         assert!(Process::Preset_TargetRealtime_Fast as u32 ==
-                   ProcessPreset_TargetRealtime_Fast_test);
+                   PROCESSPRESET_TARGETREALTIME_FAST_TEST);
     }
 }

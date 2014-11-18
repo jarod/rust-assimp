@@ -9,8 +9,7 @@ use postprocess::Process;
 use property::Property;
 use types::AiString;
 
-use property::Property::*;
-use importer::PropertyType::*;
+use importer::PropertyType::{PBool, PInt, PFloat, PStr};
 
 
 /// A scene importer.
@@ -123,64 +122,107 @@ enum PropertyType<'a> {
 
 fn decompose_property(property: Property) -> (&'static str, PropertyType) {
     match property {
-        GLOB_MEASURE_TIME(a) => ( "GLOB_MEASURE_TIME", PBool(a) ),
-        PP_SBBC_MAX_BONES(a) => ( "PP_SBBC_MAX_BONES", PInt(a) ),
-        PP_CT_MAX_SMOOTHING_ANGLE(a) => ( "PP_CT_MAX_SMOOTHING_ANGLE", PFloat(a) ),
-        PP_CT_TEXTURE_CHANNEL_INDEX(a) => ( "PP_CT_TEXTURE_CHANNEL_INDEX", PInt(a) ),
-        PP_GSN_MAX_SMOOTHING_ANGLE(a) => ( "PP_GSN_MAX_SMOOTHING_ANGLE", PFloat(a) ),
-        IMPORT_MDL_COLORMAP(a) => ( "IMPORT_MDL_COLORMAP", PStr(a) ),
-        PP_RRM_EXCLUDE_LIST(a) => ( "PP_RRM_EXCLUDE_LIST", PStr(a) ),
-        PP_PTV_KEEP_HIERARCHY(a) => ( "PP_PTV_KEEP_HIERARCHY", PBool(a) ),
-        PP_PTV_NORMALIZE(a)  => ( "PP_PTV_NORMALIZE", PFloat(a) ),
-        PP_FD_REMOVE(a) => ( "PP_FD_REMOVE", PBool(a) ),
-        PP_OG_EXCLUDE_LIST(a)    => ( "PP_OG_EXCLUDE_LIST", PStr(a) ),
-        PP_SLM_TRIANGLE_LIMIT(a) => ( "PP_SLM_TRIANGLE_LIMIT", PInt(a) ),
-        PP_SLM_VERTEX_LIMIT(a) => ( "PP_SLM_VERTEX_LIMIT", PInt(a) ),
-        PP_LBW_MAX_WEIGHTS(a) => ( "PP_LBW_MAX_WEIGHTS", PInt(a) ),
-        PP_DB_THRESHOLD(a) => ( "PP_DB_THRESHOLD", PFloat(a) ),
-        PP_DB_ALL_OR_NONE(a) => ( "PP_DB_ALL_OR_NONE", PBool(a) ),
-        PP_ICL_PTCACHE_SIZE(a) => ( "PP_ICL_PTCACHE_SIZE", PInt(a) ),
-
-        PP_RVC_FLAGS(list) => {
+        Property::GLOB_MEASURE_TIME(a) =>
+            ( "GLOB_MEASURE_TIME", PBool(a) ),
+        Property::PP_SBBC_MAX_BONES(a) =>
+            ( "PP_SBBC_MAX_BONES", PInt(a) ),
+        Property::PP_CT_MAX_SMOOTHING_ANGLE(a) =>
+            ( "PP_CT_MAX_SMOOTHING_ANGLE", PFloat(a) ),
+        Property::PP_CT_TEXTURE_CHANNEL_INDEX(a) =>
+            ( "PP_CT_TEXTURE_CHANNEL_INDEX", PInt(a) ),
+        Property::PP_GSN_MAX_SMOOTHING_ANGLE(a) =>
+            ( "PP_GSN_MAX_SMOOTHING_ANGLE", PFloat(a) ),
+        Property::IMPORT_MDL_COLORMAP(a) =>
+            ( "IMPORT_MDL_COLORMAP", PStr(a) ),
+        Property::PP_RRM_EXCLUDE_LIST(a) =>
+            ( "PP_RRM_EXCLUDE_LIST", PStr(a) ),
+        Property::PP_PTV_KEEP_HIERARCHY(a) =>
+            ( "PP_PTV_KEEP_HIERARCHY", PBool(a) ),
+        Property::PP_PTV_NORMALIZE(a)  =>
+            ( "PP_PTV_NORMALIZE", PFloat(a) ),
+        Property::PP_FD_REMOVE(a) =>
+            ( "PP_FD_REMOVE", PBool(a) ),
+        Property::PP_OG_EXCLUDE_LIST(a)    =>
+            ( "PP_OG_EXCLUDE_LIST", PStr(a) ),
+        Property::PP_SLM_TRIANGLE_LIMIT(a) =>
+            ( "PP_SLM_TRIANGLE_LIMIT", PInt(a) ),
+        Property::PP_SLM_VERTEX_LIMIT(a) =>
+            ( "PP_SLM_VERTEX_LIMIT", PInt(a) ),
+        Property::PP_LBW_MAX_WEIGHTS(a) =>
+            ( "PP_LBW_MAX_WEIGHTS", PInt(a) ),
+        Property::PP_DB_THRESHOLD(a) =>
+            ( "PP_DB_THRESHOLD", PFloat(a) ),
+        Property::PP_DB_ALL_OR_NONE(a) =>
+            ( "PP_DB_ALL_OR_NONE", PBool(a) ),
+        Property::PP_ICL_PTCACHE_SIZE(a) =>
+            ( "PP_ICL_PTCACHE_SIZE", PInt(a) ),
+        // This properties take a list as an arguement
+        Property::PP_RVC_FLAGS(list) => {
             let result = list.iter().fold(0, |sum, &y| sum | y as u32);
             ( "PP_RVC_FLAGS", PInt(result as int) )
         }
-        PP_SBP_REMOVE(list) => {
+        Property::PP_SBP_REMOVE(list) => {
             let result = list.iter().fold(0, |sum, &y| sum | y as u32);
             ( "PP_SBP_REMOVE", PInt(result as int) )
         }
-        PP_TUV_EVALUATE(list) => {
+        Property::PP_TUV_EVALUATE(list) => {
             let result = list.iter().fold(0, |sum, &y| sum | y as u32);
             ( "PP_TUV_EVALUATE", PInt(result as int) )
         }
-
-        PP_FID_ANIM_ACCURACY(a) => ( "PP_FID_ANIM_ACCURACY", PFloat(a) ),
-        FAVOUR_SPEED(a) => ( "FAVOUR_SPEED", PBool(a) ),
-        IMPORT_GLOBAL_KEYFRAME(a) => ( "IMPORT_GLOBAL_KEYFRAME", PInt(a) ),
-        IMPORT_MD2_KEYFRAME(a) => ( "IMPORT_MD2_KEYFRAME", PInt(a) ),
-        IMPORT_MD3_KEYFRAME(a) => ( "IMPORT_MD3_KEYFRAME", PInt(a) ),
-        IMPORT_MDC_KEYFRAME(a) => ( "IMPORT_MDC_KEYFRAME", PInt(a) ),
-        IMPORT_MDL_KEYFRAME(a) => ( "IMPORT_MDL_KEYFRAME", PInt(a) ),
-        IMPORT_SMD_KEYFRAME(a) => ( "IMPORT_SMD_KEYFRAME", PInt(a) ),
-        IMPORT_UNREAL_KEYFRAME(a) => ( "IMPORT_UNREAL_KEYFRAME", PInt(a) ),
-        IMPORT_AC_SEPARATE_BFCULL(a) => ( "IMPORT_AC_SEPARATE_BFCULL", PBool(a) ),
-        IMPORT_AC_EVAL_SUBDIVISION(a) => ( "IMPORT_AC_EVAL_SUBDIVISION", PBool(a) ),
-        IMPORT_UNREAL_HANDLE_FLAGS(a) => ( "UNREAL_HANDLE_FLAGS", PBool(a) ),
-        IMPORT_TER_MAKE_UVS(a) => ( "IMPORT_TER_MAKE_UVS", PBool(a) ),
-        IMPORT_ASE_RECONSTRUCT_NORMALS(a) => ( "IMPORT_ASE_RECONSTRUCT_NORMALS", PBool(a) ),
-        IMPORT_MD3_HANDLE_MULTIPART(a) => ( "IMPORT_MD3_HANDLE_MULTIPART", PBool(a) ),
-        IMPORT_MD3_SKIN_NAME(a) => ( "IMPORT_MD3_SKIN_NAME", PStr(a) ),
-        IMPORT_MD3_SHADER_SRC(a) => ( "IMPORT_MD3_SHADER_SRC", PStr(a) ),
-        IMPORT_MD5_NO_ANIM_AUTOLOAD(a) => ( "IMPORT_MD5_NO_ANIM_AUTOLOAD", PBool(a) ),
-        IMPORT_LWO_ONE_LAYER_ONLY(a) => ( "IMPORT_LWO_ONE_LAYER_ONLY", PInt(a) ),
-        IMPORT_LWS_ANIM_START(a) => ( "IMPORT_LWS_ANIM_START", PInt(a) ),
-        IMPORT_LWS_ANIM_END(a) => ( "IMPORT_LWS_ANIM_END", PInt(a) ),
-        IMPORT_IRR_ANIM_FPS(a) => ( "IMPORT_IRR_ANIM_FPS", PInt(a) ),
-        IMPORT_OGRE_MATERIAL_FILE(a) => ( "IMPORT_OGRE_MATERIAL_FILE", PStr(a) ),
-        IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME(a) => ( "IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME", PBool(a) ),
-        IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS", PBool(a) ),
-        IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS(a) => ( "IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS", PBool(a) ),
-        IMPORT_IFC_CUSTOM_TRIANGULATION(a) => ( "IMPORT_IFC_CUSTOM_TRIANGULATION", PBool(a) ),
+        Property::PP_FID_ANIM_ACCURACY(a) =>
+            ( "PP_FID_ANIM_ACCURACY", PFloat(a) ),
+        Property::FAVOUR_SPEED(a) =>
+            ( "FAVOUR_SPEED", PBool(a) ),
+        Property::IMPORT_GLOBAL_KEYFRAME(a) =>
+            ( "IMPORT_GLOBAL_KEYFRAME", PInt(a) ),
+        Property::IMPORT_MD2_KEYFRAME(a) =>
+            ( "IMPORT_MD2_KEYFRAME", PInt(a) ),
+        Property::IMPORT_MD3_KEYFRAME(a) =>
+            ( "IMPORT_MD3_KEYFRAME", PInt(a) ),
+        Property::IMPORT_MDC_KEYFRAME(a) =>
+            ( "IMPORT_MDC_KEYFRAME", PInt(a) ),
+        Property::IMPORT_MDL_KEYFRAME(a) =>
+            ( "IMPORT_MDL_KEYFRAME", PInt(a) ),
+        Property::IMPORT_SMD_KEYFRAME(a) =>
+            ( "IMPORT_SMD_KEYFRAME", PInt(a) ),
+        Property::IMPORT_UNREAL_KEYFRAME(a) =>
+            ( "IMPORT_UNREAL_KEYFRAME", PInt(a) ),
+        Property::IMPORT_AC_SEPARATE_BFCULL(a) =>
+            ( "IMPORT_AC_SEPARATE_BFCULL", PBool(a) ),
+        Property::IMPORT_AC_EVAL_SUBDIVISION(a) =>
+            ( "IMPORT_AC_EVAL_SUBDIVISION", PBool(a) ),
+        Property::IMPORT_UNREAL_HANDLE_FLAGS(a) =>
+            ( "UNREAL_HANDLE_FLAGS", PBool(a) ),
+        Property::IMPORT_TER_MAKE_UVS(a) =>
+            ( "IMPORT_TER_MAKE_UVS", PBool(a) ),
+        Property::IMPORT_ASE_RECONSTRUCT_NORMALS(a) =>
+            ( "IMPORT_ASE_RECONSTRUCT_NORMALS", PBool(a) ),
+        Property::IMPORT_MD3_HANDLE_MULTIPART(a) =>
+            ( "IMPORT_MD3_HANDLE_MULTIPART", PBool(a) ),
+        Property::IMPORT_MD3_SKIN_NAME(a) =>
+            ( "IMPORT_MD3_SKIN_NAME", PStr(a) ),
+        Property::IMPORT_MD3_SHADER_SRC(a) =>
+            ( "IMPORT_MD3_SHADER_SRC", PStr(a) ),
+        Property::IMPORT_MD5_NO_ANIM_AUTOLOAD(a) =>
+            ( "IMPORT_MD5_NO_ANIM_AUTOLOAD", PBool(a) ),
+        Property::IMPORT_LWO_ONE_LAYER_ONLY(a) =>
+            ( "IMPORT_LWO_ONE_LAYER_ONLY", PInt(a) ),
+        Property::IMPORT_LWS_ANIM_START(a) =>
+            ( "IMPORT_LWS_ANIM_START", PInt(a) ),
+        Property::IMPORT_LWS_ANIM_END(a) =>
+            ( "IMPORT_LWS_ANIM_END", PInt(a) ),
+        Property::IMPORT_IRR_ANIM_FPS(a) =>
+            ( "IMPORT_IRR_ANIM_FPS", PInt(a) ),
+        Property::IMPORT_OGRE_MATERIAL_FILE(a) =>
+            ( "IMPORT_OGRE_MATERIAL_FILE", PStr(a) ),
+        Property::IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME(a) =>
+            ( "IMPORT_OGRE_TEXTURETYPE_FROM_FILENAME", PBool(a) ),
+        Property::IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS(a) =>
+            ( "IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS", PBool(a) ),
+        Property::IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS(a) =>
+            ( "IMPORT_IFC_SKIP_CURVE_REPRESENTATIONS", PBool(a) ),
+        Property::IMPORT_IFC_CUSTOM_TRIANGULATION(a) =>
+            ( "IMPORT_IFC_CUSTOM_TRIANGULATION", PBool(a) ),
     }
 }
 
@@ -189,7 +231,7 @@ mod test {
     // use std::io::MemWriter;
     // use std::io::BufReader;
 
-    use super::*;
+    use super::Importer;
     use property::Property;
 
     // Log to memory

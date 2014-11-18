@@ -6,25 +6,25 @@ use std::fmt;
 use types::{Vector3D, Color4D, Matrix4x4, AiString};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
 
-use mesh::PrimitiveType::*;
+use mesh::PrimitiveType::{Point, Line, Triangle, Polygon};
 
 /// Maximum number of indices per face (polygon).
-pub const AI_MAX_FACE_INDICES : uint = 0x7fff;
+pub const MAX_FACE_INDICES : uint = 0x7fff;
 
 /// Maximum number of indices per face (polygon).
-pub const AI_MAX_BONE_WEIGHTS : uint = 0x7fffffff;
+pub const MAX_BONE_WEIGHTS : uint = 0x7fffffff;
 
 /// Maximum number of vertices per mesh.
-pub const AI_MAX_VERTICES : uint = 0x7fffffff;
+pub const MAX_VERTICES : uint = 0x7fffffff;
 
 /// Maximum number of faces per mesh.
-pub const AI_MAX_FACES : uint = 0x7fffffff;
+pub const MAX_FACES : uint = 0x7fffffff;
 
 /// Supported number of vertex color sets per mesh.
-pub const AI_MAX_NUMBER_OF_COLOR_SETS : uint = 0x8;
+pub const MAX_NUMBER_OF_COLOR_SETS : uint = 0x8;
 
 /// Supported number of texture coord sets (uv[w] channels) per mesh
-pub const AI_MAX_NUMBER_OF_TEXTURECOORDS : uint = 0x8;
+pub const MAX_NUMBER_OF_TEXTURECOORDS : uint = 0x8;
 
 /// A single face in a mesh, referring to multiple vertices.
 ///
@@ -46,7 +46,7 @@ pub const AI_MAX_NUMBER_OF_TEXTURECOORDS : uint = 0x8;
 pub struct Face {
     /// Number of indices defining this face.
     ///
-    /// The maximum value for this member is `AI_MAX_FACE_INDICES`.
+    /// The maximum value for this member is `MAX_FACE_INDICES`.
     pub num_indices: c_uint,
 
     /// Pointer to the indices array. Size of the array is given in numIndices.
@@ -85,7 +85,7 @@ pub struct Bone {
 
     /// The number of vertices affected by this bone
     ///
-    /// The maximum value for this member is `AI_MAX_BONE_WEIGHTS`.
+    /// The maximum value for this member is `MAX_BONE_WEIGHTS`.
     pub num_weights: c_uint,
 
     /// The vertices affected by this bone
@@ -160,10 +160,10 @@ pub struct AnimMesh {
     bitangents: *mut Vector3D,
 
     /// Replacement for Mesh colors
-    colors: [*mut Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
+    colors: [*mut Color4D, ..MAX_NUMBER_OF_COLOR_SETS],
 
     /// Replacement for Mesh texture_coords
-    texture_coords: [*mut Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    texture_coords: [*mut Vector3D, ..MAX_NUMBER_OF_TEXTURECOORDS],
 
     /// The number of vertices in the AnimMesh, and thus the length of all
     /// the member arrays.
@@ -207,13 +207,12 @@ impl AnimMesh {
 
     /// Replacement for Mesh colors
     pub fn get_colors(&self) -> Option<Vec<&[Color4D]>> {
-        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+        let mut list = Vec::with_capacity(MAX_NUMBER_OF_COLOR_SETS);
 
-        for i in range(0u, AI_MAX_NUMBER_OF_COLOR_SETS) {
-            if self.colors[i].is_null() { continue; }
+        for colors in self.colors.iter() {
+            if colors.is_null() { break; }
             unsafe {
-                list.push(ptr_to_slice(self.colors[i],
-                                       self.num_vertices as uint));
+                list.push(ptr_to_slice(*colors, self.num_vertices as uint));
             }
         }
 
@@ -224,15 +223,18 @@ impl AnimMesh {
         }
     }
 
+    /// Vertex texture coords, also known as UV channels.
+    ///
+    /// A mesh may contain 0 to `MAX_NUMBER_OF_TEXTURECOORDS` per
+    /// vertex. `None` if not present. The array is num_vertices in size.
     /// Replacement for Mesh texture_coords
     pub fn get_texure_coords(&self) -> Option<Vec<&[Vector3D]>> {
-        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+        let mut list = Vec::with_capacity(MAX_NUMBER_OF_TEXTURECOORDS);
 
-        for i in range(0u, AI_MAX_NUMBER_OF_TEXTURECOORDS) {
-            if self.texture_coords[i].is_null() { continue; }
+        for tex_coords in self.texture_coords.iter() {
+            if tex_coords.is_null() { break; }
             unsafe {
-                list.push(ptr_to_slice(self.texture_coords[i],
-                                       self.num_vertices as uint));
+                list.push(ptr_to_slice(*tex_coords, self.num_vertices as uint));
             }
         }
 
@@ -258,8 +260,8 @@ impl AnimMesh {
 /// A Mesh uses only a single material which is referenced by a material ID.
 ///
 /// Note: The positions field is usually not optional. However, vertex
-/// positions *could* be missing if the `SceneFlags_INCOMPLETE` flag is set
-/// in Scene::flags
+/// positions *could* be missing if the `SceneFlags::Incomplete` flag is set
+/// in `Scene::flags`.
 #[repr(C)]
 pub struct Mesh {
     /// Bitwise combination of the members of the PrimitiveType enum.
@@ -272,12 +274,12 @@ pub struct Mesh {
     /// The number of vertices in this mesh.
     ///
     /// This is also the size of all of the per-vertex data arrays.
-    /// The maximum value for this member is #AI_MAX_VERTICES.
+    /// The maximum value for this member is `MAX_VERTICES`.
     pub num_vertices: c_uint,
 
     /// The number of primitives (triangles, polygons, lines) in this  mesh.
-    /// This is also the size of the mFaces array.
-    /// The maximum value for this member is #AI_MAX_FACES.
+    /// This is also the size of the faces array.
+    /// The maximum value for this member is `MAX_FACES`.
     pub num_faces: c_uint,
 
     /// Vertex positions.
@@ -338,16 +340,16 @@ pub struct Mesh {
 
     /// Vertex color sets.
     ///
-    /// A mesh may contain 0 to #AI_MAX_NUMBER_OF_COLOR_SETS vertex colors per
+    /// A mesh may contain 0 to `MAX_NUMBER_OF_COLOR_SETS` vertex colors per
     /// vertex. NULL if not present. Each array is num_vertices in size if
     /// present.
-    colors: [*mut Color4D, ..AI_MAX_NUMBER_OF_COLOR_SETS],
+    colors: [*mut Color4D, ..MAX_NUMBER_OF_COLOR_SETS],
 
     /// Vertex texture coords, also known as UV channels.
     ///
-    /// A mesh may contain 0 to AI_MAX_NUMBER_OF_TEXTURECOORDS per
+    /// A mesh may contain 0 to `MAX_NUMBER_OF_TEXTURECOORDS` per
     /// vertex. NULL if not present. The array is mNumVertices in size.
-    texture_coords: [*mut Vector3D, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    texture_coords: [*mut Vector3D, ..MAX_NUMBER_OF_TEXTURECOORDS],
 
     /// Specifies the number of components for a given UV channel.
     ///
@@ -357,13 +359,13 @@ pub struct Mesh {
     /// If the value is 1 for a given channel, p.y is set to 0.0f, too.
     ///
     /// Note: 4D coords are not supported
-    pub num_uv_components: [c_uint, ..AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    pub num_uv_components: [c_uint, ..MAX_NUMBER_OF_TEXTURECOORDS],
 
     /// The faces the mesh is constructed from.
     ///
     /// Each face refers to a number of vertices by their indices.
     /// This array is always present in a mesh, its size is given
-    /// in mNumFaces. If the #AI_SCENE_FLAGS_NON_VERBOSE_FORMAT
+    /// in mNumFaces. If the SceneFlags::NON_VERBOSE_FORMAT
     /// is NOT set each face references an unique set of vertices.
     faces: *mut Face,
 
@@ -485,17 +487,16 @@ impl Mesh {
 
     /// Vertex color sets.
     ///
-    /// A mesh may contain 0 to `AI_MAX_NUMBER_OF_COLOR_SETS` vertex colors per
+    /// A mesh may contain 0 to `MAX_NUMBER_OF_COLOR_SETS` vertex colors per
     /// vertex. `None` if not present. Each array is num_vertices in size if
     /// present.
     pub fn get_colors(&self) -> Option<Vec<&[Color4D]>> {
-        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+        let mut list = Vec::with_capacity(MAX_NUMBER_OF_COLOR_SETS);
 
-        for i in range(0u, AI_MAX_NUMBER_OF_COLOR_SETS) {
-            if self.colors[i].is_null() { continue; }
+        for colors in self.colors.iter() {
+            if colors.is_null() { break; }
             unsafe {
-                list.push(ptr_to_slice(self.colors[i],
-                                       self.num_vertices as uint));
+                list.push(ptr_to_slice(*colors, self.num_vertices as uint));
             }
         }
 
@@ -508,16 +509,15 @@ impl Mesh {
 
     /// Vertex texture coords, also known as UV channels.
     ///
-    /// A mesh may contain 0 to `AI_MAX_NUMBER_OF_TEXTURECOORDS` per
+    /// A mesh may contain 0 to `MAX_NUMBER_OF_TEXTURECOORDS` per
     /// vertex. `None` if not present. The array is num_vertices in size.
     pub fn get_texure_coords(&self) -> Option<Vec<&[Vector3D]>> {
-        let mut list = Vec::with_capacity(AI_MAX_NUMBER_OF_COLOR_SETS);
+        let mut list = Vec::with_capacity(MAX_NUMBER_OF_COLOR_SETS);
 
-        for i in range(0u, AI_MAX_NUMBER_OF_TEXTURECOORDS) {
-            if self.texture_coords[i].is_null() { continue; }
+        for tex_coords in self.texture_coords.iter() {
+            if tex_coords.is_null() { break; }
             unsafe {
-                list.push(ptr_to_slice(self.texture_coords[i],
-                                       self.num_vertices as uint));
+                list.push(ptr_to_slice(*tex_coords, self.num_vertices as uint));
             }
         }
 
@@ -532,7 +532,7 @@ impl Mesh {
     ///
     /// Each face refers to a number of vertices by their indices.
     /// This array is always present in a mesh.
-    /// If the `SceneFlags_NON_VERBOSE_FORMAT` is *not* set each face references
+    /// If the `SceneFlags::NonVerboseFormat` is *not* set each face references
     /// an unique set of vertices.
     pub fn get_faces(&self) -> &[Face] {
         unsafe { ptr_to_slice(self.faces, self.num_faces as uint) }

@@ -69,7 +69,7 @@ pub struct Color3D {
 
 /// Stores the memory requirements for different components.
 ///
-/// All sizes are in bytes. Returned by Importer::GetMemoryRequirements()
+/// All sizes are in bytes. Returned by Scene::get_memory_info()
 #[deriving(Clone, PartialEq, Eq, Show)]
 #[repr(C)]
 pub struct MemoryInfo {
