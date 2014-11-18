@@ -134,7 +134,7 @@ pub enum SceneFlags {
     Terrain = 0x10,
 }
 
-// TODO hide this
+#[doc(hidden)]
 /// Objects of this class are generally maintained and owned by Assimp, not
 /// by the caller. You shouldn't want to instance it, nor should you ever try to
 /// delete a given scene on your own.
@@ -257,8 +257,7 @@ pub struct Scene<'a> {
 }
 
 impl<'a> Scene<'a> {
-    //TODO hide this from the user
-    /// Internal use only
+    #[doc(hidden)]
     pub unsafe fn from_raw_scene(raw: *const RawScene) -> Scene<'a> {
         let raw = &*raw;
         Scene {

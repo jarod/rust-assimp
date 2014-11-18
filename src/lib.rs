@@ -40,7 +40,6 @@ pub mod material;
 pub mod mesh;
 pub mod scene;
 pub mod texture;
-#[allow(missing_docs)] // don't need to document all vector elements
 pub mod types;
 pub mod importer;
 pub mod log;

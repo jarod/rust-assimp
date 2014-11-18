@@ -9,14 +9,18 @@ use ffi;
 const MAXLEN : uint = 1024u;
 
 /// Boolean type used by assimp.
+#[doc(hidden)]
 #[deriving(Clone, PartialEq, Eq, Show)]
 #[repr(C)]
 pub enum AiBool {
+    /// Represents false
     AiFalse = 0x0,
+    /// Represents true
     AiTrue = 0x1,
 }
 
 impl AiBool {
+    /// Creates a new `AiBool` from the builtin `bool`.
     pub fn new(val: bool) -> AiBool {
         match val {
             true => AiBool::AiTrue,
@@ -28,43 +32,68 @@ impl AiBool {
 ///	Standard return type for some library functions.
 #[repr(C)]
 pub enum Return {
-    /// Indicates that a function was successful 
-    Return_SUCCESS = 0x0,
+    /// Indicates that a function was successful
+    Success = 0x0,
 
-    /// Indicates that a function failed 
-    Return_FAILURE = -0x1,
+    /// Indicates that a function failed
+    Failure = -0x1,
 
-    /// Indicates that not enough memory was availabe to perform the requested 
+    /// Indicates that not enough memory was availabe to perform the requested
     /// operation
-    Return_OUTOFMEMORY = -0x3,
+    OutOfMemory = -0x3,
 }
 
 /// Represents a plane in a three-dimensional, euclidean space.
+///
+/// The components are the coefficients in the equation
+/// `ax + by + cz + d = 0`.
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Plane {
-    a: c_float,
-    b: c_float,
-    c: c_float,
-    d: c_float,
+    /// x coefficient in the plane equation
+    pub a: c_float,
+    /// y coefficient in the plane equation
+    pub b: c_float,
+    /// z coefficient in the plane equation
+    pub c: c_float,
+    /// constant in the plane equation
+    pub d: c_float,
 }
 
 /// Represents a ray.
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Ray {
-    /// Position and direction of the ray
-    pos: Vector3D,
-    dir: Vector3D,
+    /// Position of the ray
+    pub pos: Vector3D,
+    /// Direction of the ray
+    pub dir: Vector3D,
 }
 
 /// Represents a color in Red-Green-Blue space.
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Color3D {
-    r: c_float,
-    g: c_float,
-    b: c_float,
+    /// Red component
+    pub r: c_float,
+    /// Green component
+    pub g: c_float,
+    /// Blue component
+    pub b: c_float,
+}
+
+/// Represents a color in Red-Green-Blue-Alpha space.
+#[deriving(Clone, PartialEq, Show)]
+#[repr(C, packed)]
+pub struct Color4D {
+    /// Red component
+    pub r: c_float,
+    /// Green component
+    pub g: c_float,
+    /// Blue component
+    pub b: c_float,
+    /// Alpha component
+    pub a: c_float,
 }
 
 /// Stores the memory requirements for different components.
@@ -100,7 +129,7 @@ pub struct MemoryInfo {
 
 /// Represents an UTF-8 string, zero byte terminated.
 ///
-/// The character set of an AiString is explicitly defined to be UTF-8. This
+/// The character set of an `AiString` is explicitly defined to be UTF-8. This
 /// Unicode transformation was chosen in the belief that most strings in 3d
 /// files are limited to ASCII, thus the character set needed to be strictly
 /// ASCII compatible.
@@ -127,6 +156,7 @@ pub struct AiString {
 }
 
 impl AiString {
+    /// Create a new empty string
     pub fn new() -> AiString {
         AiString {
             length: 0,
@@ -134,6 +164,7 @@ impl AiString {
         }
     }
 
+    /// Get a `str` representation of this `AiString`
     pub fn as_str(&self) -> Option<&str> {
         str::from_utf8(self.data.slice_to((self.length) as uint))
     }
@@ -152,7 +183,9 @@ impl fmt::Show for AiString {
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Vector2D {
+    /// x component
     pub x: c_float,
+    /// y component
     pub y: c_float,
 }
 
@@ -160,22 +193,16 @@ pub struct Vector2D {
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Vector3D {
+    /// x component
     pub x: c_float,
+    /// y component
     pub y: c_float,
+    /// z component
     pub z: c_float,
 }
 
-/// Represents a color in Red-Green-Blue-Alpha space.
-#[deriving(Clone, PartialEq, Show)]
-#[repr(C, packed)]
-pub struct Color4D {
-    pub r: c_float,
-    pub g: c_float,
-    pub b: c_float,
-    pub a: c_float,
-}
-
 /// Represents a quaternion.
+#[allow(missing_docs)]
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Quaternion {
@@ -213,6 +240,7 @@ impl Quaternion {
 }
 
 /// Represents a 3x3 matrix.
+#[allow(missing_docs)]
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Matrix3x3 {
@@ -222,6 +250,7 @@ pub struct Matrix3x3 {
 }
 
 /// Represents a 4x4 matrix.
+#[allow(missing_docs)]
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
 pub struct Matrix4x4 {
