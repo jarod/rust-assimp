@@ -10,3 +10,5 @@ impl Exporter {
         }
     }
 }
+
+// vim: et tw=78 sw=4:

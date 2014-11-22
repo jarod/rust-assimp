@@ -11,7 +11,7 @@ fn main() {
     let importer = ai::Importer::new();
 
     // The file to import
-    let scene = importer.import("examples/assets/cube.dae").unwrap();
+    let scene = importer.import_from_file("examples/assets/cube.dae").unwrap();
 
     // Print all the vertices in all the meshes
     for mesh in scene.get_meshes().iter() {

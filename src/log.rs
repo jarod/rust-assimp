@@ -94,3 +94,5 @@ pub fn detach_all_log_streams() {
         ffi::aiDetachAllLogStreams();
     }
 }
+
+// vim: et tw=78 sw=4:

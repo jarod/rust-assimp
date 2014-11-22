@@ -189,6 +189,13 @@ pub struct Vector2D {
     pub y: c_float,
 }
 
+impl Vector2D {
+    /// Create an array representation of the vector
+    pub fn to_array(&self) -> [c_float, ..2] {
+        [self.x, self.y]
+    }
+}
+
 /// Represents a vector in 3 dimensional space.
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
@@ -199,6 +206,13 @@ pub struct Vector3D {
     pub y: c_float,
     /// z component
     pub z: c_float,
+}
+
+impl Vector3D {
+    /// Create an array representation of the vector
+    pub fn to_array(&self) -> [c_float, ..3] {
+        [self.x, self.y, self.z]
+    }
 }
 
 /// Represents a quaternion.

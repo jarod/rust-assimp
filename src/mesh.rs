@@ -118,17 +118,18 @@ pub enum PrimitiveType {
     Polygon = 0x8,
 }
 
-/// Get the PrimitiveType flag for a specific number of face vertices
-pub fn get_primitive_type(n: u32) -> PrimitiveType {
-    match n {
-        0 => panic!("0 is valid number for vertices in a face"),
-        1 => Point,
-        2 => Line,
-        3 => Triangle,
-        _ => Polygon,
+impl PrimitiveType {
+    /// Create a new primitive type from the given number of vertices
+    pub fn get_primitive_type(n: u32) -> PrimitiveType {
+        match n {
+            0 => panic!("0 is an invalid number for vertices in a face"),
+            1 => Point,
+            2 => Line,
+            3 => Triangle,
+            _ => Polygon,
+        }
     }
 }
-
 
 /// NOT CURRENTLY IN USE. An AnimMesh is an attachment to a Mesh that stores per-vertex
 /// animations for a particular frame.
@@ -188,25 +189,34 @@ impl AnimMesh {
     }
 
     /// Replacement for Mesh normals.
-    pub fn get_normals(&self) -> Option<&[Vector3D]> {
-        if self.normals.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.normals, self.num_vertices as uint)) }
+    pub fn get_normals(&self) -> &[Vector3D] {
+        let len = match self.normals.is_null() {
+            true => 0,
+            false => self.num_vertices as uint,
+        };
+        unsafe { ptr_to_slice(self.normals, len) }
     }
 
     /// Replacement for Mesh tangents.
-    pub fn get_tangents(&self) -> Option<&[Vector3D]> {
-        if self.tangents.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.tangents, self.num_vertices as uint)) }
+    pub fn get_tangents(&self) -> &[Vector3D] {
+        let len = match self.tangents.is_null() {
+            true => 0,
+            false => self.num_vertices as uint,
+        };
+        unsafe { ptr_to_slice(self.tangents, len) }
     }
 
     /// Replacement for Mesh bitangents.
-    pub fn get_bitangents(&self) -> Option<&[Vector3D]> {
-        if self.bitangents.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.bitangents, self.num_vertices as uint)) }
+    pub fn get_bitangents(&self) -> &[Vector3D] {
+        let len = match self.bitangents.is_null() {
+            true => 0,
+            false => self.num_vertices as uint,
+        };
+        unsafe { ptr_to_slice(self.bitangents, len) }
     }
 
     /// Replacement for Mesh colors
-    pub fn get_colors(&self) -> Option<Vec<&[Color4D]>> {
+    pub fn get_colors(&self) -> Vec<&[Color4D]> {
         let mut list = Vec::with_capacity(MAX_NUMBER_OF_COLOR_SETS);
 
         for colors in self.colors.iter() {
@@ -216,11 +226,7 @@ impl AnimMesh {
             }
         }
 
-        if list.len() == 0 {
-            None
-        } else {
-            Some(list)
-        }
+        list
     }
 
     /// Vertex texture coords, also known as UV channels.
@@ -228,7 +234,7 @@ impl AnimMesh {
     /// A mesh may contain 0 to `MAX_NUMBER_OF_TEXTURECOORDS` per
     /// vertex. `None` if not present. The array is num_vertices in size.
     /// Replacement for Mesh texture_coords
-    pub fn get_texure_coords(&self) -> Option<Vec<&[Vector3D]>> {
+    pub fn get_texture_coords(&self) -> Vec<&[Vector3D]> {
         let mut list = Vec::with_capacity(MAX_NUMBER_OF_TEXTURECOORDS);
 
         for tex_coords in self.texture_coords.iter() {
@@ -238,11 +244,7 @@ impl AnimMesh {
             }
         }
 
-        if list.len() == 0 {
-            None
-        } else {
-            Some(list)
-        }
+        list
     }
 }
 
@@ -387,7 +389,7 @@ pub struct Mesh {
     /// as index into the scene's material list.
     pub material_index: c_uint,
 
-    /// Name of the mesh. 
+    /// Name of the mesh.
     ///
     /// Meshes can be named, but this is not a requirement and leaving this
     /// field empty is totally fine.  There are mainly three uses for mesh
@@ -449,9 +451,12 @@ impl Mesh {
     /// Note: Normal vectors computed by Assimp are always unit-length.
     /// However, this needn't apply for normals that have been taken directly
     /// from the model file.
-    pub fn get_normals(&self) -> Option<&[Vector3D]> {
-        if self.normals.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.normals, self.num_vertices as uint)) }
+    pub fn get_normals(&self) -> &[Vector3D] {
+        let len = match self.normals.is_null() {
+            true => 0,
+            false => self.num_vertices as uint,
+        };
+        unsafe { ptr_to_slice(self.normals, len) }
     }
 
     /// Vertex tangents.
@@ -467,9 +472,12 @@ impl Mesh {
     ///
     /// Note: If the mesh contains tangents, it automatically also
     /// contains bitangents.
-    pub fn get_tangents(&self) -> Option<&[Vector3D]> {
-        if self.tangents.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.tangents, self.num_vertices as uint)) }
+    pub fn get_tangents(&self) -> &[Vector3D] {
+        let len = match self.tangents.is_null() {
+            true => 0,
+            false => self.num_vertices as uint,
+        };
+        unsafe { ptr_to_slice(self.tangents, len) }
     }
 
     /// Vertex bitangents.
@@ -480,9 +488,12 @@ impl Mesh {
     ///
     /// Note: If the mesh contains tangents, it automatically also contains
     /// bitangents.
-    pub fn get_bitangents(&self) -> Option<&[Vector3D]> {
-        if self.bitangents.is_null() { return None; }
-        unsafe { Some(ptr_to_slice(self.bitangents, self.num_vertices as uint)) }
+    pub fn get_bitangents(&self) -> &[Vector3D] {
+        let len = match self.bitangents.is_null() {
+            true => 0,
+            false => self.num_vertices as uint,
+        };
+        unsafe { ptr_to_slice(self.bitangents, len) }
     }
 
     /// Vertex color sets.
@@ -490,7 +501,7 @@ impl Mesh {
     /// A mesh may contain 0 to `MAX_NUMBER_OF_COLOR_SETS` vertex colors per
     /// vertex. `None` if not present. Each array is num_vertices in size if
     /// present.
-    pub fn get_colors(&self) -> Option<Vec<&[Color4D]>> {
+    pub fn get_colors(&self) -> Vec<&[Color4D]> {
         let mut list = Vec::with_capacity(MAX_NUMBER_OF_COLOR_SETS);
 
         for colors in self.colors.iter() {
@@ -500,18 +511,14 @@ impl Mesh {
             }
         }
 
-        if list.len() == 0 {
-            None
-        } else {
-            Some(list)
-        }
+        list
     }
 
     /// Vertex texture coords, also known as UV channels.
     ///
     /// A mesh may contain 0 to `MAX_NUMBER_OF_TEXTURECOORDS` per
     /// vertex. `None` if not present. The array is num_vertices in size.
-    pub fn get_texure_coords(&self) -> Option<Vec<&[Vector3D]>> {
+    pub fn get_texture_coords(&self) -> Vec<&[Vector3D]> {
         let mut list = Vec::with_capacity(MAX_NUMBER_OF_COLOR_SETS);
 
         for tex_coords in self.texture_coords.iter() {
@@ -521,11 +528,7 @@ impl Mesh {
             }
         }
 
-        if list.len() == 0 {
-            None
-        } else {
-            Some(list)
-        }
+        list
     }
 
     /// The faces the mesh is constructed from.
@@ -542,9 +545,8 @@ impl Mesh {
     ///
     /// A bone consists of a name by which it can be found in the frame
     /// hierarchy and a set of vertex weights.
-    pub fn get_bones(&self) -> Option<&[&Bone]> {
-        if self.bones.is_null() { return None; }
-        unsafe { Some(ptr_ptr_to_slice(self.bones, self.num_bones as uint)) }
+    pub fn get_bones(&self) -> &[&Bone] {
+        unsafe { ptr_ptr_to_slice(self.bones, self.num_bones as uint) }
     }
 }
 
@@ -564,3 +566,5 @@ impl fmt::Show for Mesh {
         self.material_index)
     }
 }
+
+// vim: et tw=78 sw=4:

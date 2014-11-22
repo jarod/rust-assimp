@@ -539,3 +539,5 @@ mod test {
                    PROCESSPRESET_TARGETREALTIME_FAST_TEST);
     }
 }
+
+// vim: et tw=78 sw=4:

@@ -255,3 +255,5 @@ impl fmt::Show for Animation {
         self.num_mesh_channels)
     }
 }
+
+// vim: et tw=78 sw=4:

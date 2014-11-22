@@ -81,3 +81,4 @@ pub struct AiFile {
     /// User-defined, opaque data
     user_data: *const c_char,
 }
+// vim: et tw=78 sw=4:

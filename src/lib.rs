@@ -1,4 +1,4 @@
-//! A binding for Open Asset Import Library (assimp)
+//! A binding for assimp: the Open Asset Import Library
 
 #![crate_name = "assimp"]
 #![comment = "assimp binding for rust"]
@@ -15,8 +15,7 @@
 #![warn(unused_imports)]
 #![deny(unused_typecasts)]
 
-#![feature(globs)]
-#![feature(unsafe_destructor)]
+#![feature(globs, unsafe_destructor)]
 
 #![experimental]
 
@@ -24,7 +23,7 @@ extern crate libc;
 
 pub use types::{Vector2D, Vector3D, Color3D, Color4D, Matrix3x3, Matrix4x4,
                 Quaternion, Plane, Ray, AiString};
-pub use scene::{Scene};
+pub use scene::Scene;
 
 pub use property::Property;
 pub use property::Component;
@@ -49,3 +48,5 @@ mod postprocess;
 mod util;
 mod ffi;
 mod fileio;
+
+// vim: et tw=78 sw=4:

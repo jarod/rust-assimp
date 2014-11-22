@@ -90,7 +90,7 @@ impl<'a> Importer {
     }
 
     /// Create a `Scene` from the given file.
-    pub fn import(&self, file_name: &str) -> Option<Scene> {
+    pub fn import_from_file(&self, file_name: &str) -> Option<Scene> {
         unsafe {
             let raw = file_name.with_c_str(|file|
                 ffi::aiImportFileExWithProperties(
@@ -249,6 +249,8 @@ mod test {
 
         // imp.set_import_property(Property::PP_TUV_EVALUATE([]));
 
-        let _ = imp.import("examples/assets/cube.dae");
+        let _ = imp.import_from_file("examples/assets/cube.dae");
     }
 }
+
+// vim: et tw=78 sw=4:

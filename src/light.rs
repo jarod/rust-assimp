@@ -146,3 +146,5 @@ pub struct Light {
     /// interpolation between the inner and the outer cone of the spot light.
     pub angle_outer_cone: c_float,
 }
+
+// vim: et tw=78 sw=4:

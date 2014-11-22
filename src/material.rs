@@ -1017,3 +1017,5 @@ impl Material {
 //                                          C_ENUM aiTextureOp* op				/*= NULL*/,
 //                                          C_ENUM aiTextureMapMode* mapmode	/*= NULL*/,
 //                                          unsigned int* flags                 /*= NULL*/);
+
+// vim: et tw=78 sw=4:

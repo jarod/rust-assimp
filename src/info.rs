@@ -197,3 +197,5 @@ mod test {
         println!("support mad : {}", info::is_ext_supported(".mad"));
     }
 }
+
+// vim: et tw=78 sw=4:

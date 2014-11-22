@@ -1,10 +1,15 @@
 [package]
-
 name = "rust-assimp"
-version = "0.0.1"
+version = "0.0.1-alpha.1"
 authors = ["juxiliary <juxiliary@gmail.com>"]
 
-[lib]
+description = "A rust wrapper for assimp"
+documentation = "http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/"
+keywords = ["3d", "model", "importer", "assimp", "binding"]
+repository = "https://github.com/juxiliary/rust-assimp"
+readme = "README.md"
+license = "MIT"
 
+[lib]
 name = "assimp"
 path = "./src/lib.rs"

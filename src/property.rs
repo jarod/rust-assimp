@@ -591,3 +591,5 @@ mod todo {
 // ///
 // const GLOB_MULTITHREADING : &'static str = "GLOB_MULTITHREADING";
 // #endif
+
+// vim: et tw=78 sw=4:

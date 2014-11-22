@@ -107,3 +107,5 @@ pub struct Camera {
     /// 0 is also the default value.
     pub aspect: c_float,
 }
+
+// vim: et tw=78 sw=4:
