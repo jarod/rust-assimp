@@ -1,16 +1,14 @@
 //! RawScene function returned by c api functions.
 use libc::{c_uint, c_void};
 
-use scene::Node;
-use animation::Animation;
-use camera::Camera;
-use light::Light;
-use material::Material;
-use mesh::Mesh;
-use texture::Texture;
+use raw::scene::Node;
+use raw::animation::Animation;
+use raw::camera::Camera;
+use raw::light::Light;
+use raw::material::Material;
+use raw::mesh::Mesh;
+use raw::texture::Texture;
 use types::{Matrix4x4, AiString, MemoryInfo};
-use util::{ptr_ptr_to_slice, ptr_to_slice};
-use postprocess::PostProcessSteps;
 
 /// Objects of this class are generally maintained and owned by Assimp, not
 /// by the caller. You shouldn't want to instance it, nor should you ever try to

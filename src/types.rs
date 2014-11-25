@@ -168,6 +168,15 @@ impl AiString {
     pub fn as_str(&self) -> Option<&str> {
         str::from_utf8(self.data.slice_to((self.length) as uint))
     }
+
+    /// Get a `String` representation of this `AiString`
+    pub fn into_string(&self) -> Option<String> {
+        match String::from_utf8((self.data.slice_to(self.length as uint))
+                                .to_vec()) {
+            Err(_) => None,
+            Ok(s) => Some(s),
+        }
+    }
 }
 
 impl fmt::Show for AiString {
@@ -210,7 +219,7 @@ pub struct Vector3D {
 
 impl Vector3D {
     /// Create an array representation of the vector
-    pub fn to_array(&self) -> [c_float, ..3] {
+    pub fn to_slice(&self) -> [c_float, ..3] {
         [self.x, self.y, self.z]
     }
 }

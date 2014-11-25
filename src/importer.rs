@@ -11,7 +11,6 @@ use types::AiString;
 
 use importer::PropertyType::{PBool, PInt, PFloat, PStr};
 
-
 /// A scene importer.
 pub struct Importer {
     property_store: *mut ffi::PropertyStore,
