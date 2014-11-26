@@ -11,6 +11,7 @@ extern crate event;
 extern crate input;
 extern crate cam;
 extern crate gfx;
+extern crate device;
 extern crate sdl2;
 extern crate sdl2_window;
 extern crate time;
@@ -29,7 +30,9 @@ use gfx::{ Device, DeviceHelper, ToSlice };
 use event::{ Events, WindowSettings };
 use event::window::{ CaptureCursor };
 
-const MAX_BONES: u8 = 60;
+const MAX_BONES: uint = 60;
+type BoneTranslation = [f32, ..4];
+type BoneRotation = [f32, ..4];
 
 struct TextureStore {
     textures: HashMap<String, gfx::TextureHandle>,
@@ -93,6 +96,13 @@ struct ModelComponent {
     pub shader_data: ShaderParam,
 }
 
+struct BoneStore {
+    /// Translates a bone name into a bone id
+    pub bone_map: HashMap<String, gfx::TextureHandle>,
+    // pub bone_list: Vec<Bones>
+    pub num_bones: uint;
+}
+
 struct Model {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
@@ -131,10 +141,12 @@ impl Model {
         // prepare the data structures used to store the scene
         let mut vertices = Vec::with_capacity(num_vertices as uint);
         let mut indices = Vec::with_capacity(num_indices as uint);
+        // stores the first index of each mesh
         let mut start_indices = Vec::with_capacity(ai_scene.num_meshes as uint + 1);
         let mut batches = Vec::with_capacity(ai_scene.num_meshes as uint);
         let mut materials = Vec::with_capacity(ai_scene.num_materials as uint);
 
+        // find the textures used by this model from the list of materials
         for mat in ai_scene.get_materials().iter() {
             let texture_src = mat.get_texture(ai::material::TextureType::Diffuse,
                                               0
@@ -162,7 +174,7 @@ impl Model {
 
                 let verts = mesh.get_vertices();
                 let norms = mesh.get_normals();
-                //TODO
+                //TODO handle no texture coords
                 let tex_coords = mesh.get_texture_coords()[0];
 
 
@@ -183,8 +195,15 @@ impl Model {
                 }
 
                 start_indices.push(indices.len() as u32);
+
+                // all the bones referenced by this mesh
+                for bone in mesh.get_bones().iter() {
+
+                }
+
             }
         }
+
 
         // create the vertex and index buffers
         // generate the batches used to draw the object
@@ -206,9 +225,15 @@ impl Model {
 
             for (slice, mesh) in buf_slices.iter()
                                  .zip(ai_scene.get_meshes().iter()) {
+                let u_bone_translation: gfx::BufferHandle<BoneTranslation> =
+                    graphics.device.create_buffer(MAX_BONES, gfx::BufferUsage::Dynamic);
+                let u_bone_rotation: gfx::BufferHandle<BoneRotation> =
+                    graphics.device.create_buffer(MAX_BONES, gfx::BufferUsage::Dynamic);
                 let shader_data = ShaderParam {
                     u_model_view_proj: vecmath::mat4_id(),
                     t_color: (*materials[mesh.material_index as uint], None),
+                    u_bone_translation: u_bone_translation.raw(),
+                    u_bone_rotation: u_bone_rotation.raw(),
                 };
 
                 batches.push(ModelComponent {
@@ -248,19 +273,22 @@ struct Vertex {
     a_normal: [f32, ..3],
     #[as_float]
     a_tex_coord: [f32, ..3],
-    #[as_float]
-    a_weights: [f32, ..4],
-    #[as_float]
-    a_bone_ids: [u8, ..4],
+    // #[as_float]
+    // a_weights: [f32, ..4],
+    // #[as_float]
+    // a_bone_ids: [u8, ..4],
     //TODO bones
 }
 
 #[shader_param(ModelBatch)]
 struct ShaderParam {
     u_model_view_proj: [[f32, ..4], ..4],
-    // u_bone_rotation: [[f32, ..4], ..MAX_BONES],
-    u_bone_offset: [f32, ..4],
+    /// texture for the mesh
     t_color: gfx::shade::TextureParam,
+    /// mesh rotations caused by bones
+    u_bone_rotation: gfx::RawBufferHandle,
+    /// mesh transformations caused by bones
+    u_bone_translation: gfx::RawBufferHandle,
 }
 
 static VERTEX_SRC: gfx::ShaderSource<'static> = shaders! {//{{{
@@ -269,13 +297,18 @@ GLSL_150: b"
     in vec3 a_position;
     in vec3 a_normal;
     in vec3 a_tex_coord;
-    in vec4 a_weights;
-    in ivec4 a_bone_ids;
+    // in vec4 a_weights;
+    // in ivec4 a_bone_ids;
 
     out vec2 v_TexCoord;
 
-    uniform mat4
     uniform mat4 u_model_view_proj;
+    uniform u_bone_rotation {
+        vec4[60] quat;
+    };
+    uniform u_bone_translation {
+        vec4[60] offset;
+    };
 
     void main() {
         v_TexCoord = vec2(a_tex_coord);
@@ -288,13 +321,12 @@ static FRAGMENT_SRC: gfx::ShaderSource<'static> = shaders! {
 GLSL_150: b"
     #version 150 core
     in vec2 v_TexCoord;
+
     out vec4 o_Color;
     uniform sampler2D t_color;
     void main() {
         vec4 tex = texture(t_color, v_TexCoord);
         float blend = dot(v_TexCoord-vec2(0.5,0.5), v_TexCoord-vec2(0.5,0.5));
-        // o_Color = vec4(0.0,1.0,0.0,0.0);
-        // o_Color = tex;
         o_Color = mix(tex, vec4(0.0,0.0,0.0,0.0), blend*1.0);
     }
 "
@@ -353,22 +385,22 @@ fn main() {
                                      );
 
 
-    // let model_view = vecmath::mat4_id();
     // Rotate the model 90 deg around the x-axis
     let model_view =
     [
-    [ 1.0,  0.0,  0.0,  0.0],
-    [ 0.0,  0.0, -1.0,  0.0],
-    [ 0.0,  1.0,  0.0,  0.0],
-    [ 0.0,  0.0,  0.0,  1.0],
-    ]
-        ;
+        [ 1.0,  0.0,  0.0,  0.0],
+        [ 0.0,  0.0, -1.0,  0.0],
+        [ 0.0,  1.0,  0.0,  0.0],
+        [ 0.0,  0.0,  0.0,  1.0],
+    ];
+
     let projection = cam::CameraPerspective {
             fov: 90.0f32,
             near_clip: 0.1,
             far_clip: 1000.0,
             aspect_ratio: (win_width as f32) / (win_height as f32)
         }.projection();
+
     let mut first_person = cam::FirstPerson::new(
         [10.5f32, 0.5, 9.0],
         cam::FirstPersonSettings::keyboard_wasd()
