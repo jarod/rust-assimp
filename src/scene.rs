@@ -226,7 +226,7 @@ pub struct RawScene {
 /// Everything that was imported from the given file can be accessed from here.
 pub struct Scene<'a> {
     /// Note we use this struct to wrap the RawScene so that we
-    /// can aiReleaseImport gets dropped.
+    /// can call `aiReleaseImport` when it gets dropped.
     raw_scene: &'a RawScene,
 
     /// Any combination of the flags in `SceneFlags`.

@@ -17,7 +17,7 @@ pub struct Importer {
     flags: u32,
 }
 
-impl<'a> Importer {
+impl Importer {
     /// Create a new scene importer
     pub fn new() -> Importer {
         Importer {

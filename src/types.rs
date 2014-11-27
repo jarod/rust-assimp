@@ -205,6 +205,24 @@ impl Vector2D {
     }
 }
 
+impl Add<Vector2D, Vector2D> for Vector2D {
+    fn add(&self, rhs: &Vector2D) -> Vector2D {
+        Vector2D {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl Sub<Vector2D, Vector2D> for Vector2D {
+    fn sub(&self, rhs: &Vector2D) -> Vector2D {
+        Vector2D {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
+
 /// Represents a vector in 3 dimensional space.
 #[deriving(Clone, PartialEq, Show)]
 #[repr(C, packed)]
@@ -221,6 +239,56 @@ impl Vector3D {
     /// Create an array representation of the vector
     pub fn to_slice(&self) -> [c_float, ..3] {
         [self.x, self.y, self.z]
+    }
+}
+
+impl Add<Vector3D, Vector3D> for Vector3D {
+    fn add(&self, rhs: &Vector3D) -> Vector3D {
+        Vector3D {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
+impl Sub<Vector3D, Vector3D> for Vector3D {
+    fn sub(&self, rhs: &Vector3D) -> Vector3D {
+        Vector3D {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl Mul<f32, Vector3D> for Vector3D {
+    fn mul(&self, rhs: &f32) -> Vector3D {
+        Vector3D {
+            x: self.x * *rhs,
+            y: self.y * *rhs,
+            z: self.z * *rhs,
+        }
+    }
+}
+
+impl Mul<Vector3D, Vector3D> for f32 {
+    fn mul(&self, rhs: &Vector3D) -> Vector3D {
+        Vector3D {
+            x: *self * rhs.x,
+            y: *self * rhs.y,
+            z: *self * rhs.z,
+        }
+    }
+}
+
+impl Div<f32, Vector3D> for Vector3D {
+    fn div(&self, rhs: &f32) -> Vector3D {
+        Vector3D {
+            x: self.x / *rhs,
+            y: self.y / *rhs,
+            z: self.z / *rhs,
+        }
     }
 }
 
@@ -241,16 +309,6 @@ impl Quaternion {
     }
 }
 
-impl Add<Quaternion, Quaternion> for Quaternion {
-    fn add(&self, rhs: &Quaternion) -> Quaternion {
-        Quaternion { w: self.w + rhs.w,
-                     x: self.x + rhs.x,
-                     y: self.y + rhs.y,
-                     z: self.z + rhs.z,
-        }
-    }
-}
-
 impl Quaternion {
     /// Creates a rotation quaternion from the given matrix
     pub fn from_matrix(mat: &Matrix3x3) -> Quaternion {
@@ -259,6 +317,76 @@ impl Quaternion {
             ffi::aiCreateQuaternionFromMatrix(&mut quat, mat);
         }
         quat
+    }
+
+    /// Dot product
+    #[inline(always)]
+    pub fn dot(&self, other: &Quaternion) -> f32 {
+        self.w * other.w +
+        self.x * other.x +
+        self.y * other.y +
+        self.z * other.z
+    }
+
+    /// Normalize the quaternion
+    pub fn normalize(&mut self) -> Quaternion {
+        let mag = self.dot(self);
+        *self / mag
+    }
+}
+
+impl Add<Quaternion, Quaternion> for Quaternion {
+    fn add(&self, rhs: &Quaternion) -> Quaternion {
+        Quaternion {
+            w: self.w + rhs.w,
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
+impl Sub<Quaternion, Quaternion> for Quaternion {
+    fn sub(&self, rhs: &Quaternion) -> Quaternion {
+        Quaternion {
+            w: self.w - rhs.w,
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl Mul<f32, Quaternion> for Quaternion {
+    fn mul(&self, rhs: &f32) -> Quaternion {
+        Quaternion {
+            w: self.w * *rhs,
+            x: self.x * *rhs,
+            y: self.y * *rhs,
+            z: self.z * *rhs,
+        }
+    }
+}
+
+impl Mul<Quaternion, Quaternion> for f32 {
+    fn mul(&self, rhs: &Quaternion) -> Quaternion {
+        Quaternion {
+            w: *self * rhs.w,
+            x: *self * rhs.x,
+            y: *self * rhs.y,
+            z: *self * rhs.z,
+        }
+    }
+}
+
+impl Div<f32, Quaternion> for Quaternion {
+    fn div(&self, rhs: &f32) -> Quaternion {
+        Quaternion {
+            w: self.w / *rhs,
+            x: self.x / *rhs,
+            y: self.y / *rhs,
+            z: self.z / *rhs,
+        }
     }
 }
 

@@ -31,10 +31,12 @@ use event::{ Events, WindowSettings };
 use event::window::{ CaptureCursor };
 
 const MAX_BONES: uint = 60;
-type BoneTranslation = [f32, ..4];
-type BoneRotation = [f32, ..4];
 
-struct TextureStore {
+type Vec3 = [f32, ..3];
+type Vec4 = [f32, ..4];
+type Mat4 = [Vec4, ..4];
+
+struct TextureStore {//{{{
     textures: HashMap<String, gfx::TextureHandle>,
 }
 
@@ -89,46 +91,72 @@ impl TextureStore {
             textures: textures
         }
     }
+}//}}}
+
+struct BoneMap {//{{{
+    /// Translates a bone name into a bone id
+    pub bone_map: HashMap<String, u32>,
+    pub offsets: Vec<ai::Matrix4x4>,
+    // pub final_transformations: Vec<ai::Matrix4x4>,
 }
+
+impl BoneMap {
+    fn new(scene: &ai::Scene) -> BoneMap {
+        let mut bone_map = HashMap::new();
+        let mut offsets = Vec::new();
+        let mut num_bones = 0u32;
+
+        for mesh in scene.get_meshes().iter() {
+            for bone in mesh.get_bones().iter() {
+                let name = bone.name.to_string();
+                match bone_map.get(&name) {
+                    Some(_) => continue,
+                    None => {
+                        bone_map.insert(name, num_bones);
+                        offsets.push(bone.offset_matrix);
+                        num_bones += 1;
+                    }
+                }
+            }
+        }
+
+        BoneMap {
+            bone_map: bone_map,
+            offsets: offsets,
+        }
+    }
+
+    #[inline(always)]
+    fn get_id(&self, name: &String) -> u32 {
+        *self.bone_map.get(name).unwrap()
+    }
+}//}}}
 
 struct ModelComponent {
     pub batch: ModelBatch,
     pub shader_data: ShaderParam,
 }
 
-struct BoneStore {
-    /// Translates a bone name into a bone id
-    pub bone_map: HashMap<String, gfx::TextureHandle>,
-    // pub bone_list: Vec<Bones>
-    pub num_bones: uint;
-}
-
-struct Model {
+struct Model<'a> {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
     pub batches: Vec<ModelComponent>,
+    pub scene: ai::Scene<'a>,
 }
 
-impl Model {
-    fn from_file(fname: &str,
-                 // device: &mut gfx::GlDevice,
+#[inline(always)]
+fn lerp<S, T: Add<T,T> + Sub<T,T> + Mul<S,T> >(start: T, end: T, s: S) -> T {
+    return start + (end - start) * s;
+}
+
+impl<'a> Model<'a> {
+    fn from_file(ai_scene: ai::Scene<'a>,
+        // fname: &str,
                  graphics: &mut gfx::Graphics<gfx::GlDevice, gfx::GlCommandBuffer>,
                  program: &gfx::ProgramHandle,
                  state: &gfx::DrawState,
                  texture_store: &TextureStore,
-                 ) -> Model {
-        let mut importer = ai::Importer::new();
-        importer.add_processing_steps(&[
-                                       ai::Process::Triangulate,
-                                       // ai::Process::GenNormals,
-                                       ai::Process::GenSmoothNormals,
-                                       ai::Process::JoinIdenticalVertices
-                                       ]);
-
-        let ai_scene = match importer.import_from_file(fname) {
-            Some(scene) => scene,
-            None => panic!("failed to import scene: {}", fname),
-        };
+                 ) -> Model<'a> {
 
         // calculate the space we need to allocate
         let mut num_vertices = 0;
@@ -141,10 +169,18 @@ impl Model {
         // prepare the data structures used to store the scene
         let mut vertices = Vec::with_capacity(num_vertices as uint);
         let mut indices = Vec::with_capacity(num_indices as uint);
-        // stores the first index of each mesh
+        // The bone weights and ids. Each vertex may be influenced by upto
+        // 4 bones
+        let mut bone_weights: Vec<Vec4> = Vec::from_elem(num_vertices as uint,
+                                                               [0.0, ..4]);
+        let mut bone_ids: Vec<[u32, ..4]> = Vec::from_elem(num_vertices as uint,
+                                                           [0, ..4]);
+        let bone_map = BoneMap::new(&ai_scene);
+
+        // stores the first index of each mesh, used for creating batches
         let mut start_indices = Vec::with_capacity(ai_scene.num_meshes as uint + 1);
-        let mut batches = Vec::with_capacity(ai_scene.num_meshes as uint);
         let mut materials = Vec::with_capacity(ai_scene.num_materials as uint);
+        let mut batches = Vec::with_capacity(ai_scene.num_meshes as uint);
 
         // find the textures used by this model from the list of materials
         for mat in ai_scene.get_materials().iter() {
@@ -170,37 +206,51 @@ impl Model {
             start_indices.push(0);
 
             for mesh in ai_scene.get_meshes().iter() {
-                let vert_count  = vertices.len() as u32;
+                let vert_id_offset  = vertices.len() as u32;
 
                 let verts = mesh.get_vertices();
                 let norms = mesh.get_normals();
                 //TODO handle no texture coords
                 let tex_coords = mesh.get_texture_coords()[0];
 
+                // get all the bone information for this mesh
+                for bone in mesh.get_bones().iter() {
+                    let bone_id = bone_map.get_id(&bone.name.to_string());
+                    'w: for vert_weight in bone.get_weights().iter() {
+                        let vertex_id = (vert_id_offset + vert_weight.vertex_id) as uint;
+                        for i in range(0u, 4) {
+                            if bone_ids[vertex_id][i] == 0 {
+                                bone_weights[vertex_id][i] = vert_weight.weight;
+                                bone_ids[vertex_id][i] = bone_id;
+                                continue 'w;
+                            }
+                        }
+                        // TODO: Get assimp to limit num bone influences to 4
+                        unreachable!();
+                    }
+                }
 
+                // fill up the vertex buffer
                 for i in range(0u, verts.len()) {
                     vertices.push( Vertex {
                         a_position: verts[i].to_slice(),
                         a_normal: norms[i].to_slice(),
                         a_tex_coord: tex_coords[i].to_slice(),
+                        a_bone_weights: bone_weights[i],
+                        a_bone_ids: bone_ids[i],
                     });
                 }
 
+                // fill up the index buffer
                 for face in mesh.get_faces().iter() {
                     let face_indices = face.get_indices();
                     assert!(face_indices.len() == 3);
-                    indices.push(face_indices[0] + vert_count);
-                    indices.push(face_indices[1] + vert_count);
-                    indices.push(face_indices[2] + vert_count);
+                    indices.push(face_indices[0] + vert_id_offset);
+                    indices.push(face_indices[1] + vert_id_offset);
+                    indices.push(face_indices[2] + vert_id_offset);
                 }
 
                 start_indices.push(indices.len() as u32);
-
-                // all the bones referenced by this mesh
-                for bone in mesh.get_bones().iter() {
-
-                }
-
             }
         }
 
@@ -225,15 +275,12 @@ impl Model {
 
             for (slice, mesh) in buf_slices.iter()
                                  .zip(ai_scene.get_meshes().iter()) {
-                let u_bone_translation: gfx::BufferHandle<BoneTranslation> =
-                    graphics.device.create_buffer(MAX_BONES, gfx::BufferUsage::Dynamic);
-                let u_bone_rotation: gfx::BufferHandle<BoneRotation> =
+                let u_bone_transformations: gfx::BufferHandle<Mat4> =
                     graphics.device.create_buffer(MAX_BONES, gfx::BufferUsage::Dynamic);
                 let shader_data = ShaderParam {
                     u_model_view_proj: vecmath::mat4_id(),
                     t_color: (*materials[mesh.material_index as uint], None),
-                    u_bone_translation: u_bone_translation.raw(),
-                    u_bone_rotation: u_bone_rotation.raw(),
+                    u_bone_transformations: u_bone_transformations.raw(),
                 };
 
                 batches.push(ModelComponent {
@@ -250,6 +297,7 @@ impl Model {
             vertices: vertices,
             indices: indices,
             batches: batches,
+            scene: ai_scene,
         }
     }
 
@@ -263,6 +311,91 @@ impl Model {
             graphics.draw(&component.batch, &component.shader_data, frame);
         }
     }
+
+    fn interpolate_position(&self,
+                            time: f64,
+                            node: &ai::animation::NodeAnim
+                           ) -> ai::Vector3D {
+        let keys = node.get_position_keys();
+
+        // only one key, so no need to interpolate
+        if keys.len() == 1 {
+            return keys[0].value
+        }
+
+        // otherwise, find out which keys the given time falls between
+        // and interpolate
+        for pos_keys in keys.windows(2) {
+            // note: once we find a match, we return
+            if time > pos_keys[0].time {
+                let dt = pos_keys[1].time - pos_keys[0].time;
+                // how far inbetween the frams we are on a scale from 0 to 1
+                let s = (time - pos_keys[0].time) / dt;
+                return lerp(pos_keys[0].value,
+                            pos_keys[1].value,
+                            s as f32);
+            }
+        }
+        // get the last frame
+        return keys[keys.len()-1].value
+    }
+
+    fn interpolate_scaling(&self,
+                           time: f64,
+                           node: &ai::animation::NodeAnim
+                           ) -> ai::Vector3D {
+        let keys = node.get_scaling_keys();
+
+        // only one key, so no need to interpolate
+        if keys.len() == 1 {
+            return keys[0].value
+        }
+
+        // otherwise, find out which keys the given time falls between
+        // and interpolate
+        for scale_keys in keys.windows(2) {
+            // note: once we find a match, we return
+            if time > scale_keys[0].time {
+                let dt = scale_keys[1].time - scale_keys[0].time;
+                // how far inbetween the frams we are on a scale from 0 to 1
+                let s = (time - scale_keys[0].time) / dt;
+                return lerp(scale_keys[0].value,
+                            scale_keys[1].value,
+                            s as f32);
+            }
+        }
+        // get the last frame
+        return keys[keys.len()-1].value
+    }
+
+    fn interpolate_rotation(&self,
+                            time: f64,
+                            node: &ai::animation::NodeAnim
+                           ) -> ai::Quaternion {
+        let keys = node.get_rotation_keys();
+
+        // only one key, so no need to interpolate
+        if keys.len() == 1 {
+            return keys[0].value
+        }
+
+        // otherwise, find out which keys the given time falls between
+        // and interpolate
+        for rot_keys in keys.windows(2) {
+            // note: once we find a match, we return
+            if time > rot_keys[0].time {
+                let dt = rot_keys[1].time - rot_keys[0].time;
+                // how far inbetween the frames we are on a scale from 0 to 1
+                let s = (time - rot_keys[0].time) / dt;
+                // nlerp
+                return lerp(rot_keys[0].value,
+                            rot_keys[1].value,
+                            s as f32).normalize();
+            }
+        }
+        // get the last frame
+        return keys[keys.len()-1].value
+    }
 }
 
 #[vertex_format]
@@ -273,11 +406,10 @@ struct Vertex {
     a_normal: [f32, ..3],
     #[as_float]
     a_tex_coord: [f32, ..3],
-    // #[as_float]
-    // a_weights: [f32, ..4],
-    // #[as_float]
-    // a_bone_ids: [u8, ..4],
-    //TODO bones
+    #[as_float]
+    a_bone_weights: [f32, ..4],
+    #[as_float]
+    a_bone_ids: [u32, ..4],
 }
 
 #[shader_param(ModelBatch)]
@@ -285,10 +417,8 @@ struct ShaderParam {
     u_model_view_proj: [[f32, ..4], ..4],
     /// texture for the mesh
     t_color: gfx::shade::TextureParam,
-    /// mesh rotations caused by bones
-    u_bone_rotation: gfx::RawBufferHandle,
     /// mesh transformations caused by bones
-    u_bone_translation: gfx::RawBufferHandle,
+    u_bone_transformations: gfx::RawBufferHandle,
 }
 
 static VERTEX_SRC: gfx::ShaderSource<'static> = shaders! {//{{{
@@ -297,17 +427,16 @@ GLSL_150: b"
     in vec3 a_position;
     in vec3 a_normal;
     in vec3 a_tex_coord;
-    // in vec4 a_weights;
-    // in ivec4 a_bone_ids;
+    in vec4 a_bone_weights;
+    in ivec4 a_bone_ids;
 
     out vec2 v_TexCoord;
 
+    const int MAX_BONES = 60;
+
     uniform mat4 u_model_view_proj;
-    uniform u_bone_rotation {
-        vec4[60] quat;
-    };
-    uniform u_bone_translation {
-        vec4[60] offset;
+    uniform u_bone_transformations {
+        mat4[MAX_BONES] bones;
     };
 
     void main() {
@@ -366,7 +495,6 @@ fn main() {
             gfx::tex::Clamp
         )
     );
-
     let program = device.link_program(
             VERTEX_SRC.clone(),
             FRAGMENT_SRC.clone()
@@ -377,7 +505,22 @@ fn main() {
                                          );
 
     let mut graphics = gfx::Graphics::new(device);
-    let mut model = Model::from_file("../assets/guard-md5/guard.md5mesh",
+
+    let mut importer = ai::Importer::new();
+    importer.add_processing_steps(&[
+                                    ai::Process::Triangulate,
+                                    // ai::Process::GenNormals,
+                                    ai::Process::GenSmoothNormals,
+                                    ai::Process::JoinIdenticalVertices
+                                    ]);
+
+    let fname = "../assets/guard-md5/guard.md5mesh";
+    let ai_scene = match importer.import_from_file(fname) {
+        Some(scene) => scene,
+        None => panic!("failed to import scene: {}", fname),
+    };
+
+    let mut model = Model::from_file(ai_scene,
                                      &mut graphics,
                                      &program,
                                      &state,

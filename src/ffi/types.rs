@@ -3,11 +3,13 @@ use types::{Matrix3x3, Quaternion};
 
 //TODO implement these in rust
 extern {
-    /** Construct a quaternion from a 3x3 rotation matrix.
-    *  @param quat Receives the output quaternion.
-    *  @param mat Matrix to 'quaternionize'.
-    *  @see aiQuaternion(const aiMatrix3x3& pRotMatrix)
-    */
+    ///  Construct a quaternion from a 3x3 rotation matrix.
+    ///
+    /// * param quat Receives the output quaternion.
+    /// * param mat Matrix to 'quaternionize'.
+    ///
+    /// * see aiQuaternion(const aiMatrix3x3& pRotMatrix)
+    /// 
     // ASSIMP_API void aiCreateQuaternionFromMatrix(
     //     C_STRUCT aiQuaternion* quat,
     //     const C_STRUCT aiMatrix3x3* mat);
