@@ -11,14 +11,13 @@ use types::AiString;
 
 use importer::PropertyType::{PBool, PInt, PFloat, PStr};
 
-
 /// A scene importer.
 pub struct Importer {
     property_store: *mut ffi::PropertyStore,
     flags: u32,
 }
 
-impl<'a> Importer {
+impl Importer {
     /// Create a new scene importer
     pub fn new() -> Importer {
         Importer {

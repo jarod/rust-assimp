@@ -1,10 +1,12 @@
 //! assimp`s C API
+
 pub use ffi::cimport::*;
 pub use ffi::cexport::*;
 pub use ffi::types::*;
 pub use ffi::log::*;
 pub use ffi::log::DefaultLogStream::*;
 pub use ffi::info::*;
+pub use ffi::material::*;
 
 //TODO remove the stuff we don't need once we leave the experimental stage
 #[allow(dead_code)]
@@ -17,3 +19,5 @@ mod types;
 mod log;
 #[allow(dead_code)]
 mod info;
+#[allow(dead_code)]
+mod material;

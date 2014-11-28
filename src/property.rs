@@ -19,7 +19,7 @@ pub enum Property<'a> {
     /// Maximum bone count per mesh for the SplitbyBoneCount step.
     ///
     /// Meshes are split until the maximum number of bones is reached. The default
-    /// value is SBBC_DEFAULT_MAX_BONES, which may be altered at
+    /// value is `SBBC_DEFAULT_MAX_BONES`, which may be altered at
     /// compile-time.
     ///
     /// Property data type: integer.
@@ -549,19 +549,15 @@ pub enum Component {
 
 #[cfg(untrue)]
 mod todo {
-    // default value for AI_CONFIG_PP_SLM_TRIANGLE_LIMIT
     pub const SBBC_DEFAULT_MAX_BONES : u32 = 60;
 
-    // default value for AI_CONFIG_PP_SLM_TRIANGLE_LIMIT
     pub const SLM_DEFAULT_MAX_TRIANGLES : u32 = 1000000;
 
-    // default value for AI_CONFIG_PP_SLM_VERTEX_LIMIT
     pub const SLM_DEFAULT_MAX_VERTICES : u32 = 1000000;
 
     // default value for AI_CONFIG_PP_LBW_MAX_WEIGHTS
     pub const LMW_MAX_WEIGHTS : u32 = 0x4;
 
-    // default value for AI_CONFIG_PP_LBW_MAX_WEIGHTS
     pub const DEBONE_THRESHOLD : f32 = 1.0;
 
     // Default value for the #PP_ICL_PTCACHE_SIZE property

@@ -1,9 +1,11 @@
 //! Defines the material system of the library
 
 use libc::{c_uchar, c_uint, c_float};
+use std::{ptr, mem};
 
-use types::{Vector2D, AiString};
+use types::{Vector2D, AiString, Return};
 use util::{ptr_ptr_to_slice, ptr_to_slice};
+use ffi;
 
 // /// Name for default materials (2nd is used if meshes have UV coords)
 // const AI_DEFAULT_MATERIAL_NAME : &'static str = "DefaultMaterial"
@@ -127,7 +129,7 @@ pub enum TextureType {
     /// No texture, but the value to be used as 'texture semantic'
     /// (#MaterialProperty::mSemantic) for all material properties
     /// *not* related to textures.
-    Null = 0x0,
+    None = 0x0,
 
     /// The texture is combined with the result of the diffuse lighting equation.
     Diffuse = 0x1,
@@ -219,13 +221,13 @@ pub enum ShadingMode {
     Flat = 0x1,
 
     /// Simple Gouraud shading.
-    Gouraud =	0x2,
+    Gouraud =   0x2,
 
     /// Phong-Shading
     Phong = 0x3,
 
     /// Phong-Blinn-Shading
-    Blinn	= 0x4,
+    Blinn   = 0x4,
 
     /// Toon-Shading per pixel. Also known as 'comic' shader.
     Toon = 0x5,
@@ -377,13 +379,13 @@ pub enum PropertyTypeInfo {
 ///
 /// Material property names follow a simple scheme:
 ///
-/// ```comment
-// ///   $<name>
-// ///   ?<name>
+/// ```ignore
+///   $<name>
+///   ?<name>
 ///      A public property, there must be corresponding AI_MATKEY_XXX define
 ///      2nd: Public, but ignored by the #aiProcess_RemoveRedundantMaterials
 ///      post-processing step.
-// ///   ~<name>
+///   ~<name>
 ///      A temporary property for internal use.
 /// ```
 /// see Material
@@ -396,7 +398,7 @@ pub struct MaterialProperty {
     /// Textures: Specifies their exact usage semantic.
     ///
     /// For non-texture properties, this member is always 0
-    /// (or, better-said, `TextureType_NONE`).
+    /// (or, better-said, `TextureType::None`).
     pub semantic: c_uint,
 
     /// Textures: Specifies the index of the texture.
@@ -404,7 +406,7 @@ pub struct MaterialProperty {
     /// For non-texture properties, this member is always 0.
     pub index: c_uint,
 
-    ///	Size of the buffer mData is pointing to, in bytes.
+    /// Size of the buffer mData is pointing to, in bytes.
     ///
     /// This value may not be 0.
     pub data_length: c_uint,
@@ -417,18 +419,19 @@ pub struct MaterialProperty {
     /// (It's probably a hacky solution, but it works.)
     pub type_info: PropertyTypeInfo,
 
-    ///	Binary buffer to hold the property's value.
+    /// Binary buffer to hold the property's value.
     /// The size of the buffer is always mDataLength.
     data: *mut c_uchar,
 }
 
 //TODO handle this in a rusty way
 impl MaterialProperty {
-    ///	Get a binary buffer that holds the property's value.
+    /// Get a binary buffer that holds the property's value.
     /// The size of the buffer is always data_length.
     pub fn get_data(&self) -> &[u8] {
         unsafe { ptr_to_slice(self.data, self.data_length as uint) }
     }
+
 }
 
 /// Data structure for a material
@@ -455,6 +458,43 @@ impl Material {
     pub fn get_properties(&self) -> &[&MaterialProperty] {
         unsafe { ptr_ptr_to_slice(self.properties, self.num_properties as uint) }
     }
+
+    /// Get the path of the texture
+    // TODO make a nicer interface to this information
+    pub fn get_texture(&self,
+                       tex_type: TextureType,
+                       index: uint,
+                       ) -> Option<String> {
+        unsafe {
+            // aiGetMaterialTexture(aiMaterial: *const material::Material,
+            //                      aiTextureType: material::TextureType,
+            //                      index: c_uint,
+            //                      path: *mut types::AiString,
+            //                      mapping: *mut material::TextureMapping /*= NULL*/,
+            //                      uvindex: *mut c_uint            /*= NULL*/,
+            //                      blend: *mut c_float                    /*= NULL*/,
+            //                      op: *mut material::TextureOp           /*= NULL*/,
+            //                      mapmode: *mut material::TextureMapMode /*= NULL*/,
+            //                      flags: *mut c_uint              /*= NULL*/) -> types::Return;
+            let mut path: AiString = mem::uninitialized();
+            let res = ffi::aiGetMaterialTexture(self,
+                                 tex_type,
+                                 index as c_uint,
+                                 &mut path,
+                                 ptr::null_mut(),
+                                 ptr::null_mut(),
+                                 ptr::null_mut(),
+                                 ptr::null_mut(),
+                                 ptr::null_mut(),
+                                 ptr::null_mut(),
+                                );
+            match res {
+                Return::Success => { },
+                _ => return None,
+            }
+            path.into_string()
+        }
+    }
 }
 
 
@@ -479,53 +519,53 @@ impl Material {
 
 //     // Pure key names for all texture-related properties
 //     //! @cond MATS_DOC_FULL
-// #define _AI_MATKEY_TEXTURE_BASE			"$tex.file"
-// #define _AI_MATKEY_UVWSRC_BASE			"$tex.uvwsrc"
-// #define _AI_MATKEY_TEXOP_BASE			"$tex.op"
-// #define _AI_MATKEY_MAPPING_BASE			"$tex.mapping"
-// #define _AI_MATKEY_TEXBLEND_BASE		"$tex.blend"
-// #define _AI_MATKEY_MAPPINGMODE_U_BASE	"$tex.mapmodeu"
-// #define _AI_MATKEY_MAPPINGMODE_V_BASE	"$tex.mapmodev"
-// #define _AI_MATKEY_TEXMAP_AXIS_BASE		"$tex.mapaxis"
-// #define _AI_MATKEY_UVTRANSFORM_BASE		"$tex.uvtrafo"
-// #define _AI_MATKEY_TEXFLAGS_BASE		"$tex.flags"
+// #define _AI_MATKEY_TEXTURE_BASE          "$tex.file"
+// #define _AI_MATKEY_UVWSRC_BASE           "$tex.uvwsrc"
+// #define _AI_MATKEY_TEXOP_BASE            "$tex.op"
+// #define _AI_MATKEY_MAPPING_BASE          "$tex.mapping"
+// #define _AI_MATKEY_TEXBLEND_BASE     "$tex.blend"
+// #define _AI_MATKEY_MAPPINGMODE_U_BASE    "$tex.mapmodeu"
+// #define _AI_MATKEY_MAPPINGMODE_V_BASE    "$tex.mapmodev"
+// #define _AI_MATKEY_TEXMAP_AXIS_BASE      "$tex.mapaxis"
+// #define _AI_MATKEY_UVTRANSFORM_BASE      "$tex.uvtrafo"
+// #define _AI_MATKEY_TEXFLAGS_BASE         "$tex.flags"
 //     //! @endcond
 
 // #define AI_MATKEY_TEXTURE(type, N) _AI_MATKEY_TEXTURE_BASE,type,N
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_TEXTURE_DIFFUSE(N)	\
+// #define AI_MATKEY_TEXTURE_DIFFUSE(N) \
 //     AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_TEXTURE_SPECULAR(N)	\
+// #define AI_MATKEY_TEXTURE_SPECULAR(N)    \
 //     AI_MATKEY_TEXTURE(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_TEXTURE_AMBIENT(N)	\
+// #define AI_MATKEY_TEXTURE_AMBIENT(N) \
 //     AI_MATKEY_TEXTURE(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_TEXTURE_EMISSIVE(N)	\
+// #define AI_MATKEY_TEXTURE_EMISSIVE(N)    \
 //     AI_MATKEY_TEXTURE(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_TEXTURE_NORMALS(N)	\
+// #define AI_MATKEY_TEXTURE_NORMALS(N) \
 //     AI_MATKEY_TEXTURE(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_TEXTURE_HEIGHT(N)	\
+// #define AI_MATKEY_TEXTURE_HEIGHT(N)  \
 //     AI_MATKEY_TEXTURE(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_TEXTURE_SHININESS(N)	\
+// #define AI_MATKEY_TEXTURE_SHININESS(N)   \
 //     AI_MATKEY_TEXTURE(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_TEXTURE_OPACITY(N)	\
+// #define AI_MATKEY_TEXTURE_OPACITY(N) \
 //     AI_MATKEY_TEXTURE(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_TEXTURE_DISPLACEMENT(N)	\
+// #define AI_MATKEY_TEXTURE_DISPLACEMENT(N)    \
 //     AI_MATKEY_TEXTURE(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_TEXTURE_LIGHTMAP(N)	\
+// #define AI_MATKEY_TEXTURE_LIGHTMAP(N)    \
 //     AI_MATKEY_TEXTURE(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_TEXTURE_REFLECTION(N)	\
+// #define AI_MATKEY_TEXTURE_REFLECTION(N)  \
 //     AI_MATKEY_TEXTURE(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -534,37 +574,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_UVWSRC_DIFFUSE(N)	\
+// #define AI_MATKEY_UVWSRC_DIFFUSE(N)  \
 //     AI_MATKEY_UVWSRC(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_UVWSRC_SPECULAR(N)	\
+// #define AI_MATKEY_UVWSRC_SPECULAR(N) \
 //     AI_MATKEY_UVWSRC(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_UVWSRC_AMBIENT(N)	\
+// #define AI_MATKEY_UVWSRC_AMBIENT(N)  \
 //     AI_MATKEY_UVWSRC(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_UVWSRC_EMISSIVE(N)	\
+// #define AI_MATKEY_UVWSRC_EMISSIVE(N) \
 //     AI_MATKEY_UVWSRC(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_UVWSRC_NORMALS(N)	\
+// #define AI_MATKEY_UVWSRC_NORMALS(N)  \
 //     AI_MATKEY_UVWSRC(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_UVWSRC_HEIGHT(N)	\
+// #define AI_MATKEY_UVWSRC_HEIGHT(N)   \
 //     AI_MATKEY_UVWSRC(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_UVWSRC_SHININESS(N)	\
+// #define AI_MATKEY_UVWSRC_SHININESS(N)    \
 //     AI_MATKEY_UVWSRC(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_UVWSRC_OPACITY(N)	\
+// #define AI_MATKEY_UVWSRC_OPACITY(N)  \
 //     AI_MATKEY_UVWSRC(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_UVWSRC_DISPLACEMENT(N)	\
+// #define AI_MATKEY_UVWSRC_DISPLACEMENT(N) \
 //     AI_MATKEY_UVWSRC(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_UVWSRC_LIGHTMAP(N)	\
+// #define AI_MATKEY_UVWSRC_LIGHTMAP(N) \
 //     AI_MATKEY_UVWSRC(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_UVWSRC_REFLECTION(N)	\
+// #define AI_MATKEY_UVWSRC_REFLECTION(N)   \
 //     AI_MATKEY_UVWSRC(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -572,37 +612,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_TEXOP_DIFFUSE(N)	\
+// #define AI_MATKEY_TEXOP_DIFFUSE(N)   \
 //     AI_MATKEY_TEXOP(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_TEXOP_SPECULAR(N)	\
+// #define AI_MATKEY_TEXOP_SPECULAR(N)  \
 //     AI_MATKEY_TEXOP(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_TEXOP_AMBIENT(N)	\
+// #define AI_MATKEY_TEXOP_AMBIENT(N)   \
 //     AI_MATKEY_TEXOP(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_TEXOP_EMISSIVE(N)	\
+// #define AI_MATKEY_TEXOP_EMISSIVE(N)  \
 //     AI_MATKEY_TEXOP(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_TEXOP_NORMALS(N)	\
+// #define AI_MATKEY_TEXOP_NORMALS(N)   \
 //     AI_MATKEY_TEXOP(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_TEXOP_HEIGHT(N)	\
+// #define AI_MATKEY_TEXOP_HEIGHT(N)    \
 //     AI_MATKEY_TEXOP(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_TEXOP_SHININESS(N)	\
+// #define AI_MATKEY_TEXOP_SHININESS(N) \
 //     AI_MATKEY_TEXOP(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_TEXOP_OPACITY(N)	\
+// #define AI_MATKEY_TEXOP_OPACITY(N)   \
 //     AI_MATKEY_TEXOP(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_TEXOP_DISPLACEMENT(N)	\
+// #define AI_MATKEY_TEXOP_DISPLACEMENT(N)  \
 //     AI_MATKEY_TEXOP(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_TEXOP_LIGHTMAP(N)	\
+// #define AI_MATKEY_TEXOP_LIGHTMAP(N)  \
 //     AI_MATKEY_TEXOP(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_TEXOP_REFLECTION(N)	\
+// #define AI_MATKEY_TEXOP_REFLECTION(N)    \
 //     AI_MATKEY_TEXOP(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -610,37 +650,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_MAPPING_DIFFUSE(N)	\
+// #define AI_MATKEY_MAPPING_DIFFUSE(N) \
 //     AI_MATKEY_MAPPING(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_MAPPING_SPECULAR(N)	\
+// #define AI_MATKEY_MAPPING_SPECULAR(N)    \
 //     AI_MATKEY_MAPPING(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_MAPPING_AMBIENT(N)	\
+// #define AI_MATKEY_MAPPING_AMBIENT(N) \
 //     AI_MATKEY_MAPPING(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_MAPPING_EMISSIVE(N)	\
+// #define AI_MATKEY_MAPPING_EMISSIVE(N)    \
 //     AI_MATKEY_MAPPING(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_MAPPING_NORMALS(N)	\
+// #define AI_MATKEY_MAPPING_NORMALS(N) \
 //     AI_MATKEY_MAPPING(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_MAPPING_HEIGHT(N)	\
+// #define AI_MATKEY_MAPPING_HEIGHT(N)  \
 //     AI_MATKEY_MAPPING(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_MAPPING_SHININESS(N)	\
+// #define AI_MATKEY_MAPPING_SHININESS(N)   \
 //     AI_MATKEY_MAPPING(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_MAPPING_OPACITY(N)	\
+// #define AI_MATKEY_MAPPING_OPACITY(N) \
 //     AI_MATKEY_MAPPING(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_MAPPING_DISPLACEMENT(N)	\
+// #define AI_MATKEY_MAPPING_DISPLACEMENT(N)    \
 //     AI_MATKEY_MAPPING(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_MAPPING_LIGHTMAP(N)	\
+// #define AI_MATKEY_MAPPING_LIGHTMAP(N)    \
 //     AI_MATKEY_MAPPING(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_MAPPING_REFLECTION(N)	\
+// #define AI_MATKEY_MAPPING_REFLECTION(N)  \
 //     AI_MATKEY_MAPPING(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -648,37 +688,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_TEXBLEND_DIFFUSE(N)	\
+// #define AI_MATKEY_TEXBLEND_DIFFUSE(N)    \
 //     AI_MATKEY_TEXBLEND(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_TEXBLEND_SPECULAR(N)	\
+// #define AI_MATKEY_TEXBLEND_SPECULAR(N)   \
 //     AI_MATKEY_TEXBLEND(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_TEXBLEND_AMBIENT(N)	\
+// #define AI_MATKEY_TEXBLEND_AMBIENT(N)    \
 //     AI_MATKEY_TEXBLEND(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_TEXBLEND_EMISSIVE(N)	\
+// #define AI_MATKEY_TEXBLEND_EMISSIVE(N)   \
 //     AI_MATKEY_TEXBLEND(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_TEXBLEND_NORMALS(N)	\
+// #define AI_MATKEY_TEXBLEND_NORMALS(N)    \
 //     AI_MATKEY_TEXBLEND(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_TEXBLEND_HEIGHT(N)	\
+// #define AI_MATKEY_TEXBLEND_HEIGHT(N) \
 //     AI_MATKEY_TEXBLEND(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_TEXBLEND_SHININESS(N)	\
+// #define AI_MATKEY_TEXBLEND_SHININESS(N)  \
 //     AI_MATKEY_TEXBLEND(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_TEXBLEND_OPACITY(N)	\
+// #define AI_MATKEY_TEXBLEND_OPACITY(N)    \
 //     AI_MATKEY_TEXBLEND(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_TEXBLEND_DISPLACEMENT(N)	\
+// #define AI_MATKEY_TEXBLEND_DISPLACEMENT(N)   \
 //     AI_MATKEY_TEXBLEND(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_TEXBLEND_LIGHTMAP(N)	\
+// #define AI_MATKEY_TEXBLEND_LIGHTMAP(N)   \
 //     AI_MATKEY_TEXBLEND(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_TEXBLEND_REFLECTION(N)	\
+// #define AI_MATKEY_TEXBLEND_REFLECTION(N) \
 //     AI_MATKEY_TEXBLEND(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -686,37 +726,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_MAPPINGMODE_U_DIFFUSE(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_DIFFUSE(N)   \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_SPECULAR(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_SPECULAR(N)  \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_AMBIENT(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_AMBIENT(N)   \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_EMISSIVE(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_EMISSIVE(N)  \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_NORMALS(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_NORMALS(N)   \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_HEIGHT(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_HEIGHT(N)    \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_SHININESS(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_SHININESS(N) \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_OPACITY(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_OPACITY(N)   \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_DISPLACEMENT(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_DISPLACEMENT(N)  \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_LIGHTMAP(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_LIGHTMAP(N)  \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_MAPPINGMODE_U_REFLECTION(N)	\
+// #define AI_MATKEY_MAPPINGMODE_U_REFLECTION(N)    \
 //     AI_MATKEY_MAPPINGMODE_U(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -724,37 +764,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_MAPPINGMODE_V_DIFFUSE(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_DIFFUSE(N)   \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_SPECULAR(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_SPECULAR(N)  \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_AMBIENT(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_AMBIENT(N)   \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_EMISSIVE(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_EMISSIVE(N)  \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_NORMALS(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_NORMALS(N)   \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_HEIGHT(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_HEIGHT(N)    \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_SHININESS(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_SHININESS(N) \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_OPACITY(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_OPACITY(N)   \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_DISPLACEMENT(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_DISPLACEMENT(N)  \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_LIGHTMAP(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_LIGHTMAP(N)  \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_MAPPINGMODE_V_REFLECTION(N)	\
+// #define AI_MATKEY_MAPPINGMODE_V_REFLECTION(N)    \
 //     AI_MATKEY_MAPPINGMODE_V(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -762,37 +802,37 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_TEXMAP_AXIS_DIFFUSE(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_DIFFUSE(N) \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_SPECULAR(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_SPECULAR(N)    \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_AMBIENT(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_AMBIENT(N) \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_EMISSIVE(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_EMISSIVE(N)    \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_NORMALS(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_NORMALS(N) \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_HEIGHT(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_HEIGHT(N)  \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_SHININESS(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_SHININESS(N)   \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_OPACITY(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_OPACITY(N) \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_DISPLACEMENT(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_DISPLACEMENT(N)    \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_LIGHTMAP(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_LIGHTMAP(N)    \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_TEXMAP_AXIS_REFLECTION(N)	\
+// #define AI_MATKEY_TEXMAP_AXIS_REFLECTION(N)  \
 //     AI_MATKEY_TEXMAP_AXIS(aiTextureType_REFLECTION,N)
 
 //     //! @endcond
@@ -800,40 +840,40 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_UVTRANSFORM_DIFFUSE(N)	\
+// #define AI_MATKEY_UVTRANSFORM_DIFFUSE(N) \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_UVTRANSFORM_SPECULAR(N)	\
+// #define AI_MATKEY_UVTRANSFORM_SPECULAR(N)    \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_UVTRANSFORM_AMBIENT(N)	\
+// #define AI_MATKEY_UVTRANSFORM_AMBIENT(N) \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_UVTRANSFORM_EMISSIVE(N)	\
+// #define AI_MATKEY_UVTRANSFORM_EMISSIVE(N)    \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_UVTRANSFORM_NORMALS(N)	\
+// #define AI_MATKEY_UVTRANSFORM_NORMALS(N) \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_UVTRANSFORM_HEIGHT(N)	\
+// #define AI_MATKEY_UVTRANSFORM_HEIGHT(N)  \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_UVTRANSFORM_SHININESS(N)	\
+// #define AI_MATKEY_UVTRANSFORM_SHININESS(N)   \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_UVTRANSFORM_OPACITY(N)	\
+// #define AI_MATKEY_UVTRANSFORM_OPACITY(N) \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_UVTRANSFORM_DISPLACEMENT(N)	\
+// #define AI_MATKEY_UVTRANSFORM_DISPLACEMENT(N)    \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_UVTRANSFORM_LIGHTMAP(N)	\
+// #define AI_MATKEY_UVTRANSFORM_LIGHTMAP(N)    \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_UVTRANSFORM_REFLECTION(N)	\
+// #define AI_MATKEY_UVTRANSFORM_REFLECTION(N)  \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_REFLECTION,N)
 
-// #define AI_MATKEY_UVTRANSFORM_UNKNOWN(N)	\
+// #define AI_MATKEY_UVTRANSFORM_UNKNOWN(N) \
 //     AI_MATKEY_UVTRANSFORM(aiTextureType_UNKNOWN,N)
 
 //     //! @endcond
@@ -841,40 +881,40 @@ impl Material {
 
 //     // For backward compatibility and simplicity
 //     //! @cond MATS_DOC_FULL
-// #define AI_MATKEY_TEXFLAGS_DIFFUSE(N)	\
+// #define AI_MATKEY_TEXFLAGS_DIFFUSE(N)    \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_DIFFUSE,N)
 
-// #define AI_MATKEY_TEXFLAGS_SPECULAR(N)	\
+// #define AI_MATKEY_TEXFLAGS_SPECULAR(N)   \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_SPECULAR,N)
 
-// #define AI_MATKEY_TEXFLAGS_AMBIENT(N)	\
+// #define AI_MATKEY_TEXFLAGS_AMBIENT(N)    \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_AMBIENT,N)
 
-// #define AI_MATKEY_TEXFLAGS_EMISSIVE(N)	\
+// #define AI_MATKEY_TEXFLAGS_EMISSIVE(N)   \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_EMISSIVE,N)
 
-// #define AI_MATKEY_TEXFLAGS_NORMALS(N)	\
+// #define AI_MATKEY_TEXFLAGS_NORMALS(N)    \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_NORMALS,N)
 
-// #define AI_MATKEY_TEXFLAGS_HEIGHT(N)	\
+// #define AI_MATKEY_TEXFLAGS_HEIGHT(N) \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_HEIGHT,N)
 
-// #define AI_MATKEY_TEXFLAGS_SHININESS(N)	\
+// #define AI_MATKEY_TEXFLAGS_SHININESS(N)  \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_SHININESS,N)
 
-// #define AI_MATKEY_TEXFLAGS_OPACITY(N)	\
+// #define AI_MATKEY_TEXFLAGS_OPACITY(N)    \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_OPACITY,N)
 
-// #define AI_MATKEY_TEXFLAGS_DISPLACEMENT(N)	\
+// #define AI_MATKEY_TEXFLAGS_DISPLACEMENT(N)   \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_DISPLACEMENT,N)
 
-// #define AI_MATKEY_TEXFLAGS_LIGHTMAP(N)	\
+// #define AI_MATKEY_TEXFLAGS_LIGHTMAP(N)   \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_LIGHTMAP,N)
 
-// #define AI_MATKEY_TEXFLAGS_REFLECTION(N)	\
+// #define AI_MATKEY_TEXFLAGS_REFLECTION(N) \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_REFLECTION,N)
 
-// #define AI_MATKEY_TEXFLAGS_UNKNOWN(N)	\
+// #define AI_MATKEY_TEXFLAGS_UNKNOWN(N)    \
 //     AI_MATKEY_TEXFLAGS(aiTextureType_UNKNOWN,N)
 
 //         /** @brief Retrieve a material property with a specific key from the material
@@ -976,46 +1016,5 @@ impl Material {
 //     ASSIMP_API unsigned int aiGetMaterialTextureCount(const C_STRUCT aiMaterial* pMat,
 //                                                       C_ENUM aiTextureType type);
 
-//         /** @brief Helper function to get all values pertaining to a particular
-//          *  texture slot from a material structure.
-//          *
-//          *  This function is provided just for convenience. You could also read the
-//          *  texture by parsing all of its properties manually. This function bundles
-//          *  all of them in a huge function monster.
-//          *
-//          *  @param[in] mat Pointer to the input material. May not be NULL
-//          *  @param[in] type Specifies the texture stack to read from (e.g. diffuse,
-//          *     specular, height map ...).
-//          *  @param[in] index Index of the texture. The function fails if the
-//          *     requested index is not available for this texture type.
-//          *     #aiGetMaterialTextureCount() can be used to determine the number of
-//          *     textures in a particular texture stack.
-//          *  @param[out] path Receives the output path
-//          *      This parameter must be non-null.
-//          *  @param mapping The texture mapping mode to be used.
-//          *      Pass NULL if you're not interested in this information.
-//          *  @param[out] uvindex For UV-mapped textures: receives the index of the UV
-//          *      source channel. Unmodified otherwise.
-//          *      Pass NULL if you're not interested in this information.
-//          *  @param[out] blend Receives the blend factor for the texture
-//          *      Pass NULL if you're not interested in this information.
-//          *  @param[out] op Receives the texture blend operation to be perform between
-//          *		this texture and the previous texture.
-//          *      Pass NULL if you're not interested in this information.
-//          *  @param[out] mapmode Receives the mapping modes to be used for the texture.
-//          *      Pass NULL if you're not interested in this information. Otherwise,
-//          *      pass a pointer to an array of two aiTextureMapMode's (one for each
-//          *      axis, UV order).
-//          *  @return AI_SUCCESS on success, otherwise something else. Have fun.*/
-//     C_ENUM aiReturn aiGetMaterialTexture(const C_STRUCT aiMaterial* mat,
-//                                          C_ENUM aiTextureType type,
-//                                          unsigned int  index,
-//                                          C_STRUCT AiString* path,
-//                                          C_ENUM aiTextureMapping* mapping	/*= NULL*/,
-//                                          unsigned int* uvindex				/*= NULL*/,
-//                                          float* blend						/*= NULL*/,
-//                                          C_ENUM aiTextureOp* op				/*= NULL*/,
-//                                          C_ENUM aiTextureMapMode* mapmode	/*= NULL*/,
-//                                          unsigned int* flags                 /*= NULL*/);
 
 // vim: et tw=78 sw=4:

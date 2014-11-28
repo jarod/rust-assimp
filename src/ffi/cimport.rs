@@ -1,7 +1,5 @@
-
 use libc::{c_char, c_uint, c_float, c_int};
 
-// use ffi::rawscene::RawScene;
 use scene::RawScene;
 use types::{AiString, MemoryInfo};
 use fileio::{AiFileIO};

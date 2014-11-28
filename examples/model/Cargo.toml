@@ -1,0 +1,29 @@
+[package]
+name = "model"
+version = "0.0.1"
+authors = ["juxiliary <juxiliary@gmail.com>"]
+
+[[bin]]
+name = "model"
+
+[dependencies.rust-assimp]
+path = "../../"
+
+
+[dependencies.cam]
+git = "https://github.com/PistonDevelopers/cam"
+
+[dependencies.event]
+git = "https://github.com/PistonDevelopers/event"
+
+[dependencies.glfw_window]
+git = "https://github.com/pistondevelopers/glfw_window"
+
+[dependencies.sdl2_window]
+git = "https://github.com/pistondevelopers/sdl2_window"
+
+[dependencies.gfx]
+git = "https://github.com/gfx-rs/gfx-rs"
+
+[dependencies.image]
+git = "https://github.com/PistonDevelopers/image"
