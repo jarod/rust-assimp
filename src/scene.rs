@@ -139,7 +139,7 @@ pub enum SceneFlags {
 /// by the caller. You shouldn't want to instance it, nor should you ever try to
 /// delete a given scene on your own.
 #[repr(C)]
-pub struct RawScene {
+pub struct RawScene<'a> {
     /// Any combination of the AI_SCENE_FLAGS_XXX flags.
     ///
     /// By default this value is 0, no flags are set. Most applications will
@@ -183,7 +183,7 @@ pub struct RawScene {
     ///
     /// All animations imported from the given file are listed here.
     /// The array is mNumAnimations in size.
-    pub animations: *mut*mut Animation,
+    pub animations: *mut*mut Animation<'a>,
 
     /// The number of textures embedded into the file
     pub num_textures: c_uint,
@@ -227,7 +227,7 @@ pub struct RawScene {
 pub struct Scene<'a> {
     /// Note we use this struct to wrap the RawScene so that we
     /// can call `aiReleaseImport` when it gets dropped.
-    raw_scene: &'a RawScene,
+    raw_scene: &'a RawScene<'a>,
 
     /// Any combination of the flags in `SceneFlags`.
     ///
@@ -258,7 +258,7 @@ pub struct Scene<'a> {
 
 impl<'a> Scene<'a> {
     #[doc(hidden)]
-    pub unsafe fn from_raw_scene(raw: *const RawScene) -> Scene<'a> {
+    pub unsafe fn from_raw_scene(raw: *const RawScene<'a>) -> Scene<'a> {
         let raw = &*raw;
         Scene {
             raw_scene: raw,

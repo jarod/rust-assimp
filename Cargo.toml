@@ -13,3 +13,6 @@ license = "MIT"
 [lib]
 name = "assimp"
 path = "./src/lib.rs"
+
+[dependencies.vecmath]
+git = "https://github.com/PistonDevelopers/vecmath"

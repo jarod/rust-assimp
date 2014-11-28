@@ -21,6 +21,7 @@ extern crate assimp;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io;
+use std::num::Float;
 
 use assimp as ai;
 use current::{ Set };
@@ -34,9 +35,10 @@ const MAX_BONES: uint = 60;
 
 type Vec3 = [f32, ..3];
 type Vec4 = [f32, ..4];
+type IVec4 = [u32, ..4];
 type Mat4 = [Vec4, ..4];
 
-struct TextureStore {//{{{
+struct TextureStore {
     textures: HashMap<String, gfx::TextureHandle>,
 }
 
@@ -80,8 +82,8 @@ impl TextureStore {
 
             match path.filename_str() {
                 Some(fname) => {
-                    println!("Loaded texture: {}", fname);
                     textures.insert(fname.into_string(), texture);
+                    println!("Loaded texture: {}", fname);
                 },
                 None => panic!("Couldn't create texture from image"),
             }
@@ -91,13 +93,13 @@ impl TextureStore {
             textures: textures
         }
     }
-}//}}}
+}
 
-struct BoneMap {//{{{
+struct BoneMap {
     /// Translates a bone name into a bone id
     pub bone_map: HashMap<String, u32>,
     pub offsets: Vec<ai::Matrix4x4>,
-    // pub final_transformations: Vec<ai::Matrix4x4>,
+    pub transforms: Vec<Mat4>,
 }
 
 impl BoneMap {
@@ -123,12 +125,16 @@ impl BoneMap {
         BoneMap {
             bone_map: bone_map,
             offsets: offsets,
+            transforms: Vec::from_elem(MAX_BONES, vecmath::mat4_id()),
         }
     }
 
     #[inline(always)]
-    fn get_id(&self, name: &String) -> u32 {
-        *self.bone_map.get(name).unwrap()
+    fn get_id(&self, name: &String) -> Option<u32> {
+        match self.bone_map.get(name) {
+            None => None,
+            Some(val) => Some(*val),
+        }
     }
 }//}}}
 
@@ -142,21 +148,23 @@ struct Model<'a> {
     pub indices: Vec<u32>,
     pub batches: Vec<ModelComponent>,
     pub scene: ai::Scene<'a>,
+    pub bone_map: RefCell<BoneMap>,
+    pub global_inverse: ai::Matrix4x4,
+    pub bone_transform_buffer: gfx::BufferHandle<Mat4>,
 }
 
 #[inline(always)]
-fn lerp<S, T: Add<T,T> + Sub<T,T> + Mul<S,T> >(start: T, end: T, s: S) -> T {
+fn lerp<S, T: Add<T,T> + Sub<T,T> + Mul<S,T>>(start: T, end: T, s: S) -> T {
     return start + (end - start) * s;
 }
 
 impl<'a> Model<'a> {
     fn from_file(ai_scene: ai::Scene<'a>,
-        // fname: &str,
                  graphics: &mut gfx::Graphics<gfx::GlDevice, gfx::GlCommandBuffer>,
                  program: &gfx::ProgramHandle,
                  state: &gfx::DrawState,
                  texture_store: &TextureStore,
-                 ) -> Model<'a> {
+                 ) -> Model<'a> {//{{{
 
         // calculate the space we need to allocate
         let mut num_vertices = 0;
@@ -173,7 +181,7 @@ impl<'a> Model<'a> {
         // 4 bones
         let mut bone_weights: Vec<Vec4> = Vec::from_elem(num_vertices as uint,
                                                                [0.0, ..4]);
-        let mut bone_ids: Vec<[u32, ..4]> = Vec::from_elem(num_vertices as uint,
+        let mut bone_ids: Vec<IVec4> = Vec::from_elem(num_vertices as uint,
                                                            [0, ..4]);
         let bone_map = BoneMap::new(&ai_scene);
 
@@ -181,6 +189,11 @@ impl<'a> Model<'a> {
         let mut start_indices = Vec::with_capacity(ai_scene.num_meshes as uint + 1);
         let mut materials = Vec::with_capacity(ai_scene.num_materials as uint);
         let mut batches = Vec::with_capacity(ai_scene.num_meshes as uint);
+
+        // Create the buffer for the bone transformations. We fill this
+        // up each time we draw, so no need to do it here.
+        let u_bone_transformations: gfx::BufferHandle<Mat4> =
+            graphics.device.create_buffer(MAX_BONES, gfx::BufferUsage::Dynamic);
 
         // find the textures used by this model from the list of materials
         for mat in ai_scene.get_materials().iter() {
@@ -216,17 +229,27 @@ impl<'a> Model<'a> {
                 // get all the bone information for this mesh
                 for bone in mesh.get_bones().iter() {
                     let bone_id = bone_map.get_id(&bone.name.to_string());
-                    'w: for vert_weight in bone.get_weights().iter() {
+                    // println!("{}: Bone id and name: {} ===> {}",
+                    //          mesh_num, bone_id, bone.name);
+                    let bone_id = match bone_id {
+                        None => panic!("Invaild bone reference"),
+                        Some(id) => id,
+                    };
+                    for vert_weight in bone.get_weights().iter() {
                         let vertex_id = (vert_id_offset + vert_weight.vertex_id) as uint;
+                        let mut found_space = false;
                         for i in range(0u, 4) {
                             if bone_ids[vertex_id][i] == 0 {
                                 bone_weights[vertex_id][i] = vert_weight.weight;
                                 bone_ids[vertex_id][i] = bone_id;
-                                continue 'w;
+                                found_space = true;
+                                break;
                             }
                         }
-                        // TODO: Get assimp to limit num bone influences to 4
-                        unreachable!();
+                        if !found_space {
+                            // TODO: Get assimp to limit num bone influences to 4
+                            panic!("To many bones per vertex");
+                        }
                     }
                 }
 
@@ -236,8 +259,8 @@ impl<'a> Model<'a> {
                         a_position: verts[i].to_slice(),
                         a_normal: norms[i].to_slice(),
                         a_tex_coord: tex_coords[i].to_slice(),
-                        a_bone_weights: bone_weights[i],
-                        a_bone_ids: bone_ids[i],
+                        a_bone_weights: bone_weights[i + vert_id_offset as uint],
+                        a_bone_ids: bone_ids[i + vert_id_offset as uint],
                     });
                 }
 
@@ -254,7 +277,6 @@ impl<'a> Model<'a> {
             }
         }
 
-
         // create the vertex and index buffers
         // generate the batches used to draw the object
         {
@@ -262,6 +284,7 @@ impl<'a> Model<'a> {
             let ind_buf = graphics.device.create_buffer_static(indices.as_slice());
 
             let mut buf_slices = Vec::with_capacity(ai_scene.num_meshes as uint + 1);
+
 
             for ind in start_indices.windows(2) {
                 buf_slices.push(gfx::Slice {
@@ -275,8 +298,6 @@ impl<'a> Model<'a> {
 
             for (slice, mesh) in buf_slices.iter()
                                  .zip(ai_scene.get_meshes().iter()) {
-                let u_bone_transformations: gfx::BufferHandle<Mat4> =
-                    graphics.device.create_buffer(MAX_BONES, gfx::BufferUsage::Dynamic);
                 let shader_data = ShaderParam {
                     u_model_view_proj: vecmath::mat4_id(),
                     t_color: (*materials[mesh.material_index as uint], None),
@@ -297,18 +318,10 @@ impl<'a> Model<'a> {
             vertices: vertices,
             indices: indices,
             batches: batches,
+            bone_map: RefCell::new(bone_map),
+            bone_transform_buffer: u_bone_transformations,
+            global_inverse: ai_scene.get_root_node().transformation.inverse(),
             scene: ai_scene,
-        }
-    }
-
-    fn draw(&mut self,
-            graphics: &mut gfx::Graphics<gfx::GlDevice, gfx::GlCommandBuffer>,
-            frame: &gfx::Frame,
-            transform: [[f32, ..4], ..4],
-            ) {
-        for &mut component in self.batches.iter() {
-            component.shader_data.u_model_view_proj = transform;
-            graphics.draw(&component.batch, &component.shader_data, frame);
         }
     }
 
@@ -327,7 +340,7 @@ impl<'a> Model<'a> {
         // and interpolate
         for pos_keys in keys.windows(2) {
             // note: once we find a match, we return
-            if time > pos_keys[0].time {
+            if time < pos_keys[1].time {
                 let dt = pos_keys[1].time - pos_keys[0].time;
                 // how far inbetween the frams we are on a scale from 0 to 1
                 let s = (time - pos_keys[0].time) / dt;
@@ -336,7 +349,7 @@ impl<'a> Model<'a> {
                             s as f32);
             }
         }
-        // get the last frame
+        // get the last frame, if we didn't find a match
         return keys[keys.len()-1].value
     }
 
@@ -355,7 +368,7 @@ impl<'a> Model<'a> {
         // and interpolate
         for scale_keys in keys.windows(2) {
             // note: once we find a match, we return
-            if time > scale_keys[0].time {
+            if time < scale_keys[1].time {
                 let dt = scale_keys[1].time - scale_keys[0].time;
                 // how far inbetween the frams we are on a scale from 0 to 1
                 let s = (time - scale_keys[0].time) / dt;
@@ -364,7 +377,7 @@ impl<'a> Model<'a> {
                             s as f32);
             }
         }
-        // get the last frame
+        // get the last frame, if we didn't find a match
         return keys[keys.len()-1].value
     }
 
@@ -383,7 +396,7 @@ impl<'a> Model<'a> {
         // and interpolate
         for rot_keys in keys.windows(2) {
             // note: once we find a match, we return
-            if time > rot_keys[0].time {
+            if time < rot_keys[1].time {
                 let dt = rot_keys[1].time - rot_keys[0].time;
                 // how far inbetween the frames we are on a scale from 0 to 1
                 let s = (time - rot_keys[0].time) / dt;
@@ -393,11 +406,87 @@ impl<'a> Model<'a> {
                             s as f32).normalize();
             }
         }
-        // get the last frame
+        // get the last frame, if we didn't find a match
         return keys[keys.len()-1].value
+                           }
+
+    fn read_node_tree(&self,
+                      time: f64,
+                      anim_num: uint,
+                      scene_node: &ai::scene::Node,
+                      parent_transform: &ai::Matrix4x4,
+                      ) {
+        // calculate the transformation matrix for this node
+        let animation = self.scene.get_animations()[anim_num];
+        let node_transform = match animation.find_node_anim(&scene_node.name) {
+            Some(node_anim) => {
+                self.interpolate_position(time, node_anim).translation_matrix() *
+                self.interpolate_rotation(time, node_anim).rotation_matrix() *
+                self.interpolate_scaling(time, node_anim).scaling_matrix()
+            },
+            None => {
+                scene_node.transformation
+            }
+        };
+
+        let node_to_global = *parent_transform * node_transform;
+
+        let opt_id = {
+            self.bone_map.borrow().get_id(&scene_node.name.to_string())
+        };
+        match opt_id {
+            None => { },
+            Some(id) => {
+                let offset = {
+                    self.bone_map.borrow().offsets[id as uint]
+                };
+                {
+                self.bone_map.borrow_mut().transforms[id as uint] =
+                    (self.global_inverse * node_to_global * offset)
+                    .transpose().to_slice();
+                }
+            }
+        }
+
+        for child in scene_node.get_children().iter() {
+            self.read_node_tree(time,
+                                anim_num,
+                                *child,
+                                &node_to_global,
+                               );
+        }
+
     }
+
+
+    fn draw(&mut self,
+            graphics: &mut gfx::Graphics<gfx::GlDevice, gfx::GlCommandBuffer>,
+            frame: &gfx::Frame,
+            time: f64,
+            transform: Mat4,
+            ) {
+        // update the bone transformations
+        let root_node = self.scene.get_root_node();
+        self.read_node_tree(time,
+                            0,
+                            root_node,
+                            &ai::Matrix4x4::identity(),
+                           );
+
+        graphics.device.update_buffer(self.bone_transform_buffer,
+                                      self.bone_map.borrow().transforms.as_slice(),
+                                      0,
+                                      );
+
+        for &mut component in self.batches.iter() {
+            component.shader_data.u_model_view_proj = transform;
+            graphics.draw(&component.batch, &component.shader_data, frame);
+        }
+    }
+
 }
 
+#[deriving(Show)]
 #[vertex_format]
 struct Vertex {
     #[as_float]
@@ -408,13 +497,12 @@ struct Vertex {
     a_tex_coord: [f32, ..3],
     #[as_float]
     a_bone_weights: [f32, ..4],
-    #[as_float]
     a_bone_ids: [u32, ..4],
 }
 
 #[shader_param(ModelBatch)]
 struct ShaderParam {
-    u_model_view_proj: [[f32, ..4], ..4],
+    u_model_view_proj: Mat4,
     /// texture for the mesh
     t_color: gfx::shade::TextureParam,
     /// mesh transformations caused by bones
@@ -437,11 +525,16 @@ GLSL_150: b"
     uniform mat4 u_model_view_proj;
     uniform u_bone_transformations {
         mat4[MAX_BONES] bones;
-    };
+    } u_bones;
 
     void main() {
+        mat4 bone_trans = u_bones.bones[a_bone_ids[0]] * a_bone_weights[0];
+        bone_trans     += u_bones.bones[a_bone_ids[1]] * a_bone_weights[1];
+        bone_trans     += u_bones.bones[a_bone_ids[2]] * a_bone_weights[2];
+        bone_trans     += u_bones.bones[a_bone_ids[3]] * a_bone_weights[3];
+
+        gl_Position = u_model_view_proj * bone_trans * vec4(a_position, 1.0);
         v_TexCoord = vec2(a_tex_coord);
-        gl_Position = u_model_view_proj * vec4(a_position, 1.0);
     }
 "
 };
@@ -457,6 +550,7 @@ GLSL_150: b"
         vec4 tex = texture(t_color, v_TexCoord);
         float blend = dot(v_TexCoord-vec2(0.5,0.5), v_TexCoord-vec2(0.5,0.5));
         o_Color = mix(tex, vec4(0.0,0.0,0.0,0.0), blend*1.0);
+        // o_Color = vec4(v_TexCoord, 0.0, 1.0);
     }
 "
 };//}}}
@@ -529,12 +623,12 @@ fn main() {
 
 
     // Rotate the model 90 deg around the x-axis
-    let model_view =
-    [
-        [ 1.0,  0.0,  0.0,  0.0],
-        [ 0.0,  0.0, -1.0,  0.0],
-        [ 0.0,  1.0,  0.0,  0.0],
-        [ 0.0,  0.0,  0.0,  1.0],
+    // let model_view = vecmath::mat4_id();
+    let model_view = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, -1.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
     ];
 
     let projection = cam::CameraPerspective {
@@ -551,9 +645,17 @@ fn main() {
     first_person.velocity = 30.0f32;
     first_person.settings.speed_vertical = 30.0f32;
 
+    let start = time::get_time();
+
     let window = RefCell::new(window);
     for e in Events::new(&window) {
         use event::RenderEvent;
+        let now = time::get_time() - start;
+        let time = 18.0 * now.num_milliseconds() as f64 / 1e3;
+        let fmod = |x: f64, y: f64| -> f64 {
+            x - (x/y).floor() * y
+        };
+        let time = fmod(time , 140.0);
 
         first_person.event(&e);
         e.render(|args| {
@@ -567,14 +669,16 @@ fn main() {
                 &frame
             );
 
-            let u_model_view_proj = cam::model_view_projection(
-                model_view,
-                first_person.camera(args.ext_dt).orthogonal(),
-                projection
+            let u_model_view_proj =
+                cam::model_view_projection(
+                    model_view,
+                    first_person.camera(args.ext_dt).orthogonal(),
+                    projection
             );
 
             model.draw(&mut graphics,
                        &frame,
+                       time,
                        u_model_view_proj,
                        );
 

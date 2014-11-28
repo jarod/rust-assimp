@@ -7,7 +7,7 @@ use util::{ptr_ptr_to_slice, ptr_to_slice};
 use types::{Vector3D, Quaternion, AiString};
 
 /// A time-value pair specifying a certain 3D vector for the given time.
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 #[repr(C)]
 pub struct VectorKey {
     /// The time of this key
@@ -20,7 +20,7 @@ pub struct VectorKey {
 /// A time-value pair specifying a rotation for the given time.
 ///
 /// Rotations are expressed with quaternions.
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 #[repr(C)]
 pub struct QuatKey {
     /// The time of this key
@@ -32,7 +32,7 @@ pub struct QuatKey {
 }
 
 /// Binds a anim mesh to a specific point in time.
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 #[repr(C)]
 pub struct MeshKey {
     /// The time of this key
@@ -197,7 +197,7 @@ impl MeshAnim {
 ///
 /// For each node affected by the animation a separate series of data is given.
 #[repr(C)]
-pub struct Animation {
+pub struct Animation<'a> {
     /// The name of the animation. If the modeling package this data was
     /// exported from does support only a single animation channel, this
     /// name is usually empty (length is zero).
@@ -226,7 +226,7 @@ pub struct Animation {
     mesh_channels: *mut*mut MeshAnim,
 }
 
-impl Animation {
+impl<'a> Animation<'a> {
     /// The node animation channels. Each channel affects a single node.
     pub fn get_channels(&self) -> &[&NodeAnim] {
         unsafe { ptr_ptr_to_slice(self.channels, self.num_channels as uint) }
@@ -237,16 +237,36 @@ impl Animation {
         unsafe { ptr_ptr_to_slice(self.mesh_channels,
                                   self.num_mesh_channels as uint) }
     }
+
+    /// Find the `NodeAnim` with the name `name` in this `Animation`
+    pub fn find_node_anim(&'a self, name: &AiString) -> Option<&'a NodeAnim> {
+        for node in self.get_channels().iter() {
+            if node.name == *name {
+                return Some(*node)
+            }
+        }
+        return None
+    }
+
+    /// Find the `MeshAnim` with the name `name` in this `Animation`
+    pub fn find_mesh_anim(&'a self, name: &AiString) -> Option<&'a MeshAnim> {
+        for node in self.get_mesh_channels().iter() {
+            if node.name == *name {
+                return Some(*node)
+            }
+        }
+        return None
+    }
 }
 
-impl fmt::Show for Animation {
+impl<'a> fmt::Show for Animation<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Animation {{
-        name: {},
-        duration: {},
-        ticks_per_sec: {},
-        num_channels: {},
-        num_mesh_channels: {}
+        write!(f, "Animation {{ \
+        name: {}, \
+        duration: {}, \
+        ticks_per_sec: {}, \
+        num_channels: {}, \
+        num_mesh_channels: {} \
         }}",
         self.name,
         self.duration,
