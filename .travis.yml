@@ -3,7 +3,7 @@ os:
     - linux
 env:
   global:
-    - secure: eJG3Z3nNyv+FMPa9Vuyy20VgwF0DJaUg51Vo5KPxYBXKfIlGEvUWL2NydCSbfIeUi5L2isc9JOY74MvLP7u39A5JKg399w/EbEFssNFkTCjM34DZP886OxFHBrFqgZk77/1YUNB+Q0sozF/D9N9n+bKAN57jrJNX4ZWT5lBBm/c=
+    - secure: o+A1QB4hIMc4QjKVS7zDJ9vhCI36eXJtm1GhM64YMGRle8pvsSFktCMa0PW1+Gg+PB9DlGtmsMANMojL1KEcZQwYpzUkY030e7k9SF8kXgxOlx3hI6qNs5dAljss8whe0xCRnBT1pGWIhmZMbWAymO7YJ4nBiOYLxgr2ZJSHbhQ=
 before_script:
     - rustc -v
     - cargo -V
