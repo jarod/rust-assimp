@@ -17,7 +17,7 @@
 
 #![feature(globs, unsafe_destructor)]
 
-#![experimental]
+#![unstable]
 
 extern crate libc;
 extern crate vecmath;

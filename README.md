@@ -3,8 +3,8 @@ rust-assimp [![Build Status](https://travis-ci.org/juxiliary/rust-assimp.svg?bra
 
 [Documentation](http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/)
 
-## WARNING
-This code is currently experimental.
+## Notice
+This code is currently unstable.
 
 ## Building
 

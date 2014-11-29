@@ -308,7 +308,7 @@ pub struct Vector3D {
 
 impl Vector3D {
     /// Create an array representation of the vector
-    pub fn to_slice(&self) -> [c_float, ..3] {
+    pub fn to_array(&self) -> [c_float, ..3] {
         [self.x, self.y, self.z]
     }
 
@@ -437,7 +437,7 @@ impl Quaternion {
     }
 
     /// Create an array representation of the vector
-    pub fn to_slice(&self) -> [c_float, ..4] {
+    pub fn to_array(&self) -> [c_float, ..4] {
         [self.w, self.x, self.y, self.z]
     }
 
@@ -622,7 +622,7 @@ impl Matrix4x4 {
     }
 
     /// Returns a slice equivalent to this matrix in row-major format
-    pub fn to_slice(&self) -> [[f32, ..4], ..4] {
+    pub fn to_array(&self) -> [[f32, ..4], ..4] {
         [
             [self.a1, self.a2, self.a3, self.a4,],
             [self.b1, self.b2, self.b3, self.b4,],
@@ -642,7 +642,7 @@ impl Matrix4x4 {
 
     /// Compute the inverse of a 4x4 matrix
     pub fn inverse(&self) -> Matrix4x4 {
-        let inv = m::mat4_inv(self.to_slice());
+        let inv = m::mat4_inv(self.to_array());
         Matrix4x4 {
             a1:  inv[0][0], a2: inv[0][1], a3: inv[0][2], a4: inv[0][3],
             b1:  inv[1][0], b2: inv[1][1], b3: inv[1][2], b4: inv[1][3],

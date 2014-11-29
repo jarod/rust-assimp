@@ -1,9 +1,9 @@
 [package]
 name = "rust-assimp"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 authors = ["juxiliary <juxiliary@gmail.com>"]
 
-description = "A rust wrapper for assimp"
+description = "A rust wrapper for assimp the open asset import library"
 documentation = "http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/"
 keywords = ["3d", "model", "importer", "assimp", "binding"]
 repository = "https://github.com/juxiliary/rust-assimp"

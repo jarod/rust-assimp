@@ -6,9 +6,9 @@ authors = ["juxiliary <juxiliary@gmail.com>"]
 [[bin]]
 name = "model"
 
+
 [dependencies.rust-assimp]
 path = "../../"
-
 
 [dependencies.cam]
 git = "https://github.com/PistonDevelopers/cam"

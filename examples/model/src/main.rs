@@ -27,7 +27,7 @@ use assimp as ai;
 use current::{ Set };
 use image::GenericImage;
 use sdl2_window::Sdl2Window;
-use gfx::{ Device, DeviceHelper, ToSlice };
+use gfx::{ Device, DeviceHelper};
 use event::{ Events, WindowSettings };
 use event::window::{ CaptureCursor };
 
@@ -136,7 +136,7 @@ impl BoneMap {
             Some(val) => Some(*val),
         }
     }
-}//}}}
+}
 
 struct ModelComponent {
     pub batch: ModelBatch,
@@ -164,7 +164,7 @@ impl<'a> Model<'a> {
                  program: &gfx::ProgramHandle,
                  state: &gfx::DrawState,
                  texture_store: &TextureStore,
-                 ) -> Model<'a> {//{{{
+                 ) -> Model<'a> {
 
         // calculate the space we need to allocate
         let mut num_vertices = 0;
@@ -221,11 +221,6 @@ impl<'a> Model<'a> {
             for mesh in ai_scene.get_meshes().iter() {
                 let vert_id_offset  = vertices.len() as u32;
 
-                let verts = mesh.get_vertices();
-                let norms = mesh.get_normals();
-                //TODO handle no texture coords
-                let tex_coords = mesh.get_texture_coords()[0];
-
                 // get all the bone information for this mesh
                 for bone in mesh.get_bones().iter() {
                     let bone_id = bone_map.get_id(&bone.name.to_string());
@@ -235,30 +230,35 @@ impl<'a> Model<'a> {
                         None => panic!("Invaild bone reference"),
                         Some(id) => id,
                     };
-                    for vert_weight in bone.get_weights().iter() {
+                    'next_weight: for vert_weight in bone.get_weights().iter() {
                         let vertex_id = (vert_id_offset + vert_weight.vertex_id) as uint;
-                        let mut found_space = false;
                         for i in range(0u, 4) {
                             if bone_ids[vertex_id][i] == 0 {
                                 bone_weights[vertex_id][i] = vert_weight.weight;
                                 bone_ids[vertex_id][i] = bone_id;
-                                found_space = true;
-                                break;
+                                continue 'next_weight;
                             }
                         }
-                        if !found_space {
-                            // TODO: Get assimp to limit num bone influences to 4
-                            panic!("To many bones per vertex");
-                        }
+                        // assimp should have limited bone weights to 4
+                        unreachable!();
                     }
                 }
+
+                let verts = mesh.get_vertices();
+                let norms = mesh.get_normals();
+                let tex_coords = mesh.get_texture_coords();
 
                 // fill up the vertex buffer
                 for i in range(0u, verts.len()) {
                     vertices.push( Vertex {
-                        a_position: verts[i].to_slice(),
-                        a_normal: norms[i].to_slice(),
-                        a_tex_coord: tex_coords[i].to_slice(),
+                        a_position: verts[i].to_array(),
+                        a_normal: norms[i].to_array(),
+                        a_tex_coord: if tex_coords.len() == 0 {
+                            [0.0, 0.0, 0.0]
+                        } else {
+                            // only support 1 texture coord
+                            tex_coords[0][i].to_array()
+                        },
                         a_bone_weights: bone_weights[i + vert_id_offset as uint],
                         a_bone_ids: bone_ids[i + vert_id_offset as uint],
                     });
@@ -410,12 +410,12 @@ impl<'a> Model<'a> {
         return keys[keys.len()-1].value
                            }
 
-    fn read_node_tree(&self,
-                      time: f64,
-                      anim_num: uint,
-                      scene_node: &ai::scene::Node,
-                      parent_transform: &ai::Matrix4x4,
-                      ) {
+    fn update_bone_transforms(&self,
+                              time: f64,
+                              anim_num: uint,
+                              scene_node: &ai::scene::Node,
+                              parent_transform: &ai::Matrix4x4,
+                              ) {
         // calculate the transformation matrix for this node
         let animation = self.scene.get_animations()[anim_num];
         let node_transform = match animation.find_node_anim(&scene_node.name) {
@@ -443,17 +443,17 @@ impl<'a> Model<'a> {
                 {
                 self.bone_map.borrow_mut().transforms[id as uint] =
                     (self.global_inverse * node_to_global * offset)
-                    .transpose().to_slice();
+                    .transpose().to_array();
                 }
             }
         }
 
         for child in scene_node.get_children().iter() {
-            self.read_node_tree(time,
-                                anim_num,
-                                *child,
-                                &node_to_global,
-                               );
+            self.update_bone_transforms(time,
+                                        anim_num,
+                                        *child,
+                                        &node_to_global,
+                                        );
         }
 
     }
@@ -465,13 +465,12 @@ impl<'a> Model<'a> {
             time: f64,
             transform: Mat4,
             ) {
-        // update the bone transformations
-        let root_node = self.scene.get_root_node();
-        self.read_node_tree(time,
-                            0,
-                            root_node,
-                            &ai::Matrix4x4::identity(),
-                           );
+
+        self.update_bone_transforms(time,
+                                    0,
+                                    self.scene.get_root_node(),
+                                    &ai::Matrix4x4::identity(),
+                                    );
 
         graphics.device.update_buffer(self.bone_transform_buffer,
                                       self.bone_map.borrow().transforms.as_slice(),
@@ -509,7 +508,7 @@ struct ShaderParam {
     u_bone_transformations: gfx::RawBufferHandle,
 }
 
-static VERTEX_SRC: gfx::ShaderSource<'static> = shaders! {//{{{
+static VERTEX_SRC: gfx::ShaderSource<'static> = shaders! {
 GLSL_150: b"
     #version 150 core
     in vec3 a_position;
@@ -550,10 +549,9 @@ GLSL_150: b"
         vec4 tex = texture(t_color, v_TexCoord);
         float blend = dot(v_TexCoord-vec2(0.5,0.5), v_TexCoord-vec2(0.5,0.5));
         o_Color = mix(tex, vec4(0.0,0.0,0.0,0.0), blend*1.0);
-        // o_Color = vec4(v_TexCoord, 0.0, 1.0);
     }
 "
-};//}}}
+};
 
 #[start]
 fn start(argc: int, argv: *const *const u8) -> int {
@@ -583,12 +581,13 @@ fn main() {
 
     ai::log::add_log_stream(ai::log::Stdout);
 
-    let sampler = device.create_sampler(
+    let _ = device.create_sampler(
         gfx::tex::SamplerInfo::new(
             gfx::tex::Bilinear,
             gfx::tex::Clamp
         )
     );
+
     let program = device.link_program(
             VERTEX_SRC.clone(),
             FRAGMENT_SRC.clone()
@@ -601,12 +600,16 @@ fn main() {
     let mut graphics = gfx::Graphics::new(device);
 
     let mut importer = ai::Importer::new();
+
+    // limit bone weights to 4 per vertex
+    importer.set_import_property(ai::Property::PP_LBW_MAX_WEIGHTS(4));
+
     importer.add_processing_steps(&[
                                     ai::Process::Triangulate,
-                                    // ai::Process::GenNormals,
                                     ai::Process::GenSmoothNormals,
-                                    ai::Process::JoinIdenticalVertices
-                                    ]);
+                                    ai::Process::JoinIdenticalVertices,
+                                    ai::Process::LimitBoneWeights,
+                                  ]);
 
     let fname = "../assets/guard-md5/guard.md5mesh";
     let ai_scene = match importer.import_from_file(fname) {
@@ -623,7 +626,6 @@ fn main() {
 
 
     // Rotate the model 90 deg around the x-axis
-    // let model_view = vecmath::mat4_id();
     let model_view = [
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, -1.0, 0.0],
@@ -639,7 +641,7 @@ fn main() {
         }.projection();
 
     let mut first_person = cam::FirstPerson::new(
-        [10.5f32, 0.5, 9.0],
+        [0.0, 33.0, 48.0],
         cam::FirstPersonSettings::keyboard_wasd()
     );
     first_person.velocity = 30.0f32;
