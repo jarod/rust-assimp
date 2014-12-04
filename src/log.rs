@@ -22,7 +22,7 @@ pub enum LogStream<'a> {
     /// Log to the given file
     File(&'a str),
     /// Log to the given writer
-    Custom(&'a mut Writer+'a)
+    Custom(&'a mut (Writer+'a))
 }
 
 // TODO//{{{

@@ -1,8 +1,6 @@
 //! A binding for assimp: the Open Asset Import Library
 
 #![crate_name = "assimp"]
-#![comment = "assimp binding for rust"]
-#![license = "MIT"]
 #![crate_type = "rlib"]
 #![doc(html_root_url = "http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/")]
 
