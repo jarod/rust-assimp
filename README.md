@@ -1,7 +1,7 @@
-rust-assimp [![Build Status](https://travis-ci.org/juxiliary/rust-assimp.svg?branch=master)](https://travis-ci.org/juxiliary/rust-assimp)
+rust-assimp [![Build Status](https://travis-ci.org/jemcroft/rust-assimp.svg?branch=master)](https://travis-ci.org/jemcroft/rust-assimp)
 ===========
 
-[Documentation](http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/)
+[Documentation](http://www.rust-ci.org/jemcroft/rust-assimp/doc/assimp/)
 
 ## Notice
 This code is currently unstable.

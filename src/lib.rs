@@ -2,7 +2,7 @@
 
 #![crate_name = "assimp"]
 #![crate_type = "rlib"]
-#![doc(html_root_url = "http://www.rust-ci.org/juxiliary/rust-assimp/doc/assimp/")]
+#![doc(html_root_url = "http://www.rust-ci.org/jemcroft/rust-assimp/doc/assimp/")]
 
 #![deny(missing_docs)]
 #![deny(non_camel_case_types)]
