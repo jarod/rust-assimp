@@ -169,7 +169,7 @@ impl AiString {
     }
 
     /// Get a `str` representation of this `AiString`
-    pub fn as_str(&self) -> Option<&str> {
+    pub fn as_str(&self) -> Result<&str, str::Utf8Error> {
         str::from_utf8(self.data.slice_to((self.length) as uint))
     }
 
@@ -186,8 +186,8 @@ impl AiString {
 impl fmt::Show for AiString {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.as_str() {
-            None    => "".fmt(f),
-            Some(s) => s.fmt(f),
+            Ok(s) => s.fmt(f),
+            _    => "".fmt(f),
         }
     }
 }
@@ -208,7 +208,7 @@ impl PartialEq for AiString {
 }
 
 /// Represents a vector in 2 dimensional space.
-#[deriving(Clone, PartialEq, Show)]
+#[deriving(Clone, PartialEq, Show, Copy)]
 #[repr(C, packed)]
 pub struct Vector2D {
     /// x component
@@ -250,7 +250,7 @@ impl Vector2D {
 }
 
 impl Add<Vector2D, Vector2D> for Vector2D {
-    fn add(&self, rhs: &Vector2D) -> Vector2D {
+    fn add(self, rhs: Vector2D) -> Vector2D {
         Vector2D {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
@@ -259,7 +259,7 @@ impl Add<Vector2D, Vector2D> for Vector2D {
 }
 
 impl Sub<Vector2D, Vector2D> for Vector2D {
-    fn sub(&self, rhs: &Vector2D) -> Vector2D {
+    fn sub(self, rhs: Vector2D) -> Vector2D {
         Vector2D {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
@@ -268,34 +268,34 @@ impl Sub<Vector2D, Vector2D> for Vector2D {
 }
 
 impl Mul<f32, Vector2D> for Vector2D {
-    fn mul(&self, rhs: &f32) -> Vector2D {
+    fn mul(self, rhs: f32) -> Vector2D {
         Vector2D {
-            x: self.x * *rhs,
-            y: self.y * *rhs,
+            x: self.x * rhs,
+            y: self.y * rhs,
         }
     }
 }
 
 impl Mul<Vector2D, Vector2D> for f32 {
-    fn mul(&self, rhs: &Vector2D) -> Vector2D {
+    fn mul(self, rhs: Vector2D) -> Vector2D {
         Vector2D {
-            x: *self * rhs.x,
-            y: *self * rhs.y,
+            x: self * rhs.x,
+            y: self * rhs.y,
         }
     }
 }
 
 impl Div<f32, Vector2D> for Vector2D {
-    fn div(&self, rhs: &f32) -> Vector2D {
+    fn div(self, rhs: f32) -> Vector2D {
         Vector2D {
-            x: self.x / *rhs,
-            y: self.y / *rhs,
+            x: self.x / rhs,
+            y: self.y / rhs,
         }
     }
 }
 
 /// Represents a vector in 3 dimensional space.
-#[deriving(Clone, PartialEq, Show)]
+#[deriving(Clone, PartialEq, Show, Copy)]
 #[repr(C, packed)]
 pub struct Vector3D {
     /// x component
@@ -360,7 +360,7 @@ impl Vector3D {
 }
 
 impl Add<Vector3D, Vector3D> for Vector3D {
-    fn add(&self, rhs: &Vector3D) -> Vector3D {
+    fn add(self, rhs: Vector3D) -> Vector3D {
         Vector3D {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
@@ -370,7 +370,7 @@ impl Add<Vector3D, Vector3D> for Vector3D {
 }
 
 impl Sub<Vector3D, Vector3D> for Vector3D {
-    fn sub(&self, rhs: &Vector3D) -> Vector3D {
+    fn sub(self, rhs: Vector3D) -> Vector3D {
         Vector3D {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
@@ -380,38 +380,38 @@ impl Sub<Vector3D, Vector3D> for Vector3D {
 }
 
 impl Mul<f32, Vector3D> for Vector3D {
-    fn mul(&self, rhs: &f32) -> Vector3D {
+    fn mul(self, rhs: f32) -> Vector3D {
         Vector3D {
-            x: self.x * *rhs,
-            y: self.y * *rhs,
-            z: self.z * *rhs,
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
         }
     }
 }
 
 impl Mul<Vector3D, Vector3D> for f32 {
-    fn mul(&self, rhs: &Vector3D) -> Vector3D {
+    fn mul(self, rhs: Vector3D) -> Vector3D {
         Vector3D {
-            x: *self * rhs.x,
-            y: *self * rhs.y,
-            z: *self * rhs.z,
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
         }
     }
 }
 
 impl Div<f32, Vector3D> for Vector3D {
-    fn div(&self, rhs: &f32) -> Vector3D {
+    fn div(self, rhs: f32) -> Vector3D {
         Vector3D {
-            x: self.x / *rhs,
-            y: self.y / *rhs,
-            z: self.z / *rhs,
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
         }
     }
 }
 
 /// Represents a quaternion.
 #[allow(missing_docs)]
-#[deriving(Clone, PartialEq, Show)]
+#[deriving(Clone, PartialEq, Show, Copy)]
 #[repr(C, packed)]
 pub struct Quaternion {
     pub w: c_float,
@@ -490,7 +490,7 @@ impl Quaternion {
 }
 
 impl Add<Quaternion, Quaternion> for Quaternion {
-    fn add(&self, rhs: &Quaternion) -> Quaternion {
+    fn add(self, rhs: Quaternion) -> Quaternion {
         Quaternion {
             w: self.w + rhs.w,
             x: self.x + rhs.x,
@@ -501,7 +501,7 @@ impl Add<Quaternion, Quaternion> for Quaternion {
 }
 
 impl Sub<Quaternion, Quaternion> for Quaternion {
-    fn sub(&self, rhs: &Quaternion) -> Quaternion {
+    fn sub(self, rhs: Quaternion) -> Quaternion {
         Quaternion {
             w: self.w - rhs.w,
             x: self.x - rhs.x,
@@ -512,34 +512,34 @@ impl Sub<Quaternion, Quaternion> for Quaternion {
 }
 
 impl Mul<f32, Quaternion> for Quaternion {
-    fn mul(&self, rhs: &f32) -> Quaternion {
+    fn mul(self, rhs: f32) -> Quaternion {
         Quaternion {
-            w: self.w * *rhs,
-            x: self.x * *rhs,
-            y: self.y * *rhs,
-            z: self.z * *rhs,
+            w: self.w * rhs,
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
         }
     }
 }
 
 impl Mul<Quaternion, Quaternion> for f32 {
-    fn mul(&self, rhs: &Quaternion) -> Quaternion {
+    fn mul(self, rhs: Quaternion) -> Quaternion {
         Quaternion {
-            w: *self * rhs.w,
-            x: *self * rhs.x,
-            y: *self * rhs.y,
-            z: *self * rhs.z,
+            w: self * rhs.w,
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
         }
     }
 }
 
 impl Div<f32, Quaternion> for Quaternion {
-    fn div(&self, rhs: &f32) -> Quaternion {
+    fn div(self, rhs: f32) -> Quaternion {
         Quaternion {
-            w: self.w / *rhs,
-            x: self.x / *rhs,
-            y: self.y / *rhs,
-            z: self.z / *rhs,
+            w: self.w / rhs,
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
         }
     }
 }
@@ -590,10 +590,10 @@ impl Matrix3x3 {
 }
 
 impl Mul<Matrix3x3, Matrix3x3> for Matrix3x3 {
-    fn mul(&self, rhs: &Matrix3x3) -> Matrix3x3 {
+    fn mul(self, rhs: Matrix3x3) -> Matrix3x3 {
         let mut result = self.clone();
         unsafe {
-            ffi::aiMultiplyMatrix3(&mut result, rhs)
+            ffi::aiMultiplyMatrix3(&mut result, &rhs)
         }
         result
     }
@@ -653,10 +653,10 @@ impl Matrix4x4 {
 }
 
 impl Mul<Matrix4x4, Matrix4x4> for Matrix4x4 {
-    fn mul(&self, rhs: &Matrix4x4) -> Matrix4x4 {
+    fn mul(self, rhs: Matrix4x4) -> Matrix4x4 {
         let mut result = self.clone();
         unsafe {
-            ffi::aiMultiplyMatrix4(&mut result, rhs)
+            ffi::aiMultiplyMatrix4(&mut result, &rhs)
         }
         result
     }

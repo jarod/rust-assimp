@@ -103,6 +103,7 @@ impl Bone {
 }
 
 /// Enumerates the types of geometric primitives supported by Assimp.
+#[deriving(Copy)]
 #[repr(C)]
 pub enum PrimitiveType {
     /// A point primitive.
